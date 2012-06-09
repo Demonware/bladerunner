@@ -24,14 +24,24 @@ Almost any command should be possible to issue through good quote
 usage and bash knowledge. clcout will silently ignore extra input
 passed to it if it does not resolve to an ip.
 
+You can use the following options with clcout:
+	-f <filename>		Import commands from a file
+	-u <username>		Use a different user to SSH
+	-v			Prints verbose output
+
 Bugs & TODO
 -----------
 
 Currently there is no handler for accepting a new ssh certificate.
-Need to add a file input option for running multiple commands.
-Add a logging option to capture all output. The shell prompt pattern
-match could be considerably more precise and verbose as well for other
-platforms and shell prompts.
+The shell prompt pattern match could be considerably more precise 
+and verbose as well for other platforms and shell prompts. Some of
+this work is already started with the username flag.
+
+The output from commands is not the best yet, but with the use of
+the -v flag, you can see everything, and even though the output
+may be suppressed, you can know that the commands were issued at
+at least. Also, something TODO is to add in error catchers for
+timeouts and wrong passwords, etc.
 
 Copyright and License
 ---------------------
