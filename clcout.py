@@ -108,7 +108,6 @@ if (len(ips) == 0):
 
 myPass = getpass.getpass("Password: ")
 shellPrompts = ['[' + userName + '@.*]', userName + '@.*:~$', userName + '@.*:~#'] # unicode('\x5B.*\@.*\x5D')
-print shellPrompts
 results = {}
 for server in ips:	
 	# Spawn the SSH connection
