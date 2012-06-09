@@ -9,6 +9,8 @@
 import sys
 import socket
 import getpass
+import os
+import re
 
 try:
 	import pexpect
@@ -40,21 +42,23 @@ def canFind(name):
 		return False
 
 def tharBeLettersHere(letters):
+	letters = repr(letters) # thanks taurgal from #python@freenode.irc
 	foundOne = False
 	for c in letters:
-		if c.isalpha() == True:
+		if 65 <= ord(c) <= 90 or 97 <= ord(c) <= 122:
 			foundOne = True
 			break
 	for shell in shellPrompts:
-		if letters.find(shell) > 0:
+		if re.search(shell, letters) != '':
 			return False
 	return foundOne
 
-def formatOutput(s):
+def formatOutput(s, command):
 	s = s.split('\r\n') # tty connections use windows line-endings, because of reasons
 	formattedOutput = ""
 	for line in s:
-		if (tharBeLettersHere(line) == True):
+		line = line.strip(os.linesep)
+		if (line.find(command) < 0 and tharBeLettersHere(str(line)) == True):
 			formattedOutput += line + "\n"
 	return formattedOutput
 
@@ -98,22 +102,20 @@ for x in sys.argv:
 	else:
 		dns = canFind(x)
 		if dns != False and isIP(dns) == True: # or names that resolve to IPs
-			ips.append(x) # this bugs me... doing two dns lookups per server
-				      # but you know, it looks prettier at the end... :|
+			ips.append(x) # this bugs me... doing two dns lookups per server. but you know, it looks prettier in the end... :|
 
 if (len(ips) == 0):
 	help(False)
 
 myPass = getpass.getpass("Password: ")
-shellPrompts = ['\[.*\@.*\]','.*\@.*:~\$']
-#unicode('\x5B.*\@.*\x5D') # unicode prompt, not sure how to mix types here
+shellPrompts = ['[' + userName + '@.*]', userName + '@.*:~$', userName + '@.*:~#'] # unicode('\x5B.*\@.*\x5D')
 results = {}
 for server in ips:	
 	# Spawn the SSH connection
 	sshc = pexpect.spawn('ssh ' + userName + "@" + server)
 
 	# Expect the password prompt. TODO: add in ssh key first time auth question/response
-	sshc.expect('.*\@.*assword:')
+	sshc.expect(userName + '@.*assword:')
 	if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 
 	# Send the password, expect a shell prompt.
@@ -130,21 +132,21 @@ for server in ips:
 			sys.exit(1)
 		multiOutput = ''
 		for line in myFile:
+			line = line.strip()
 			sshc.sendline(line)
-			sshc.expect(shellPrompts)
-			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 			st = sshc.expect(shellPrompts)
 			if st == 0: output = sshc.before # this doesn't feel kosher...
 			elif st == 1: output = sshc.after # but for some reason works
-			multiOutput += formatOutput(output)
-		results[server] = formatOutput(output)
+			multiOutput += formatOutput(output, line)
+			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+		results[server] = multiOutput
 	else:
 		sshc.sendline(command)
 		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 		st = sshc.expect(shellPrompts)
 		if st == 0: output = sshc.before # this doesn't feel kosher...
 		elif st == 1: output = sshc.after # but for some reason works
-		results[server] = formatOutput(output)
+		results[server] = formatOutput(output, command)
 	
 	# Close the SSH connection...
 	sshc.sendline('exit')
