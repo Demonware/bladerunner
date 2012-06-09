@@ -25,11 +25,9 @@ usage and bash knowledge. clcout will silently ignore extra input
 passed to it if it does not resolve to an ip.
 
 You can use the following options with clcout:
-
+	
 	-f <filename>		Import commands from a file
-
 	-u <username>		Use a different user to SSH
-
 	-v			Prints verbose output
 
 Bugs & TODO
