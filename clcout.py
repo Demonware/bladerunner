@@ -8,16 +8,13 @@
 
 import sys
 import socket
+import getpass
 
 try:
 	import pexpect
 except:
 	print >>sys.stderr, "Missing pexpect. Try apt-get install python-pexpect"
 	sys.exit(1)
-try:
-	import getpass
-except:
-	print >>sys.strerr, "Missing getpass. Try apt-get install python-getpass"
 
 def help(verboseHelp):
 	print "Usage: clcout [OPTIONS] COMMAND [HOST ...]"
