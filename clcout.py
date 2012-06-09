@@ -6,7 +6,6 @@
 
 # Requires: python-pexpect
 
-from getpass import getpass
 import sys
 import socket
 
@@ -15,9 +14,19 @@ try:
 except:
 	print >>sys.stderr, "Missing pexpect. Try apt-get install python-pexpect"
 	sys.exit(1)
+try:
+	import getpass
+except:
+	print >>sys.strerr, "Missing getpass. Try apt-get install python-getpass"
 
-def help():
-	print "Usage: clcout COMMAND [HOST ...]"
+def help(verboseHelp):
+	print "Usage: clcout [OPTIONS] COMMAND [HOST ...]"
+	if verboseHelp == True:
+		print "Options:"
+		print "  -f <filename>\t\tLoad commands from a file"
+		print "  -h \t\t\tThis help screen"
+		print "  -u <username>\t\tUse a different user name to connect"
+		print "  -v\t\t\tVerbose output"
 	sys.exit(0)
 
 def isIP(i):
@@ -39,15 +48,53 @@ def tharBeLettersHere(letters):
 		if c.isalpha() == True:
 			foundOne = True
 			break
+	for shell in shellPrompts:
+		if letters.find(shell) > 0:
+			return False
 	return foundOne
 
+def formatOutput(s):
+	s = s.split('\r\n') # tty connections use windows line-endings, because of reasons
+	formattedOutput = ""
+	for line in s:
+		if (tharBeLettersHere(line) == True):
+			formattedOutput += line + "\n"
+	return formattedOutput
+
 if (len(sys.argv) < 2):
-	help()
+	help(False)
 
 sys.argv.pop(0) # first argv is self... trash it
-command = sys.argv.pop(0) # command to issue
-ips = []
 
+command = sys.argv.pop(0)
+verbose = False
+userName = getpass.getuser()
+fileName = ''
+
+while command[0] == '-': # switch was passed
+	if command[1] == 'v':
+		verbose = True
+	elif command[1] == 'u':
+		try:
+			userName = sys.argv.pop(0)
+		except:
+			help(False)
+	elif command[1] == 'f':
+		try:
+			fileName = sys.argv.pop(0) 
+		except:
+			help(False)
+	else:
+		help(True)
+	try:
+		command = sys.argv.pop(0)
+	except:
+		help(False)
+
+if fileName != '': # if we're loading commands from a file, put what is in "command"
+	sys.argv.insert(0,command) # back into the list of potential servers
+
+ips = []
 for x in sys.argv:
 	if isIP(x): # search for IP addresses
 		ips.append(x)
@@ -58,44 +105,71 @@ for x in sys.argv:
 				      # but you know, it looks prettier at the end... :|
 
 if (len(ips) == 0):
-	help()
+	help(False)
 
-myPass = getpass("Password: ")
+myPass = getpass.getpass("Password: ")
 shellPrompts = ['\[.*\@.*\]','.*\@.*:~\$']
 #unicode('\x5B.*\@.*\x5D') # unicode prompt, not sure how to mix types here
 results = {}
-for server in ips:
-	sshc = pexpect.spawn('ssh ' + server)
-	sshc.expect('.*\@.*assword:') # password prompt. TODO: add in ssh key first time auth
+for server in ips:	
+	# Spawn the SSH connection
+	sshc = pexpect.spawn('ssh ' + userName + "@" + server)
+
+	# Expect the password prompt. TODO: add in ssh key first time auth question/response
+	sshc.expect('.*\@.*assword:')
+	if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+
+	# Send the password, expect a shell prompt.
 	sshc.sendline(myPass)
 	sshc.expect(shellPrompts)
-	sshc.sendline(command)
-	st = sshc.expect(shellPrompts)
-	if st == 0:
-		output = sshc.before
-	elif st == 1: # ubuntu/centos switch hack
-		output = sshc.after	
-	output = output.split('\r\n') # tty connections use windows line-endings, because of reasons
-	output.pop(-1) # last entry is trash (probably only in centos-untested)
-	formattedOutput = ""
-	for line in output:
-		if (line.find(command) < 0 and tharBeLettersHere(line) == True and line.find('\[.*\@.*\]') < 0):
-			formattedOutput += line + "\n"
-	results[server] = formattedOutput # append to the dictionary
+	if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+
+	# If we're loading commands from a file, do that, otherwise just send the one
+	if fileName != '':
+		try:
+			myFile = open(fileName,'r')
+		except:
+			print >>sys.stderr, "Could not open file: " + fileName
+			sys.exit(1)
+		multiOutput = ''
+		for line in myFile:
+			sshc.sendline(line)
+			sshc.expect(shellPrompts)
+			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+			st = sshc.expect(shellPrompts)
+			if st == 0: output = sshc.before # this doesn't feel kosher...
+			elif st == 1: output = sshc.after # but for some reason works
+			multiOutput += formatOutput(output)
+		results[server] = formatOutput(output)
+	else:
+		sshc.sendline(command)
+		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+		st = sshc.expect(shellPrompts)
+		if st == 0: output = sshc.before # this doesn't feel kosher...
+		elif st == 1: output = sshc.after # but for some reason works
+		results[server] = formatOutput(output)
+	
+	# Close the SSH connection...
 	sshc.sendline('exit')
 	sshc.terminate()
 
+# Makes a list of servers and replies, consolodates dupes
 finalResults = {}
 for server, reply in results.iteritems():
 	found = False
 	for repl, serv in finalResults.iteritems():
 		if (repl.find(reply) >= 0):
 			serv.append(server)
-			found = True # makes a list of servers and replies, gets rid of dupes
+			found = True 
 	if found == False:
 		finalResults[reply] = [server]
 
-for result, servers in finalResults.iteritems():
-	print ' '.join(servers) + " returned:"
-	sys.stdout.write(result)
-
+# Prints results
+if verbose == False:
+	for result, servers in finalResults.iteritems():
+		print ' '.join(servers) + " returned:"
+		sys.stdout.write(result)
+else:
+	print ''
+		
+sys.exit(0)
