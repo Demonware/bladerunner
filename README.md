@@ -28,7 +28,7 @@ You can use the following options with clcout:
 	
 	-f <filename>		Import commands from a file
 	-u <username>		Use a different user to SSH
-	-v     			Prints verbose output
+	-v				Prints verbose output
 
 Bugs & TODO
 -----------
