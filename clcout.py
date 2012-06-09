@@ -66,7 +66,6 @@ if (len(sys.argv) < 2):
 	help(False)
 
 sys.argv.pop(0) # first argv is self... trash it
-
 command = sys.argv.pop(0)
 verbose = False
 userName = getpass.getuser()
@@ -109,6 +108,7 @@ if (len(ips) == 0):
 
 myPass = getpass.getpass("Password: ")
 shellPrompts = ['[' + userName + '@.*]', userName + '@.*:~$', userName + '@.*:~#'] # unicode('\x5B.*\@.*\x5D')
+print shellPrompts
 results = {}
 for server in ips:	
 	# Spawn the SSH connection
@@ -135,17 +135,17 @@ for server in ips:
 			line = line.strip()
 			sshc.sendline(line)
 			st = sshc.expect(shellPrompts)
-			if st == 0: output = sshc.before # this doesn't feel kosher...
-			elif st == 1: output = sshc.after # but for some reason works
-			multiOutput += formatOutput(output, line)
 			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+			if st == 0: output = sshc.before # TODO: fix this line
+			elif st == 1: output = sshc.after # TODO: fix this line
+			multiOutput += formatOutput(output, line)
 		results[server] = multiOutput
 	else:
 		sshc.sendline(command)
-		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 		st = sshc.expect(shellPrompts)
-		if st == 0: output = sshc.before # this doesn't feel kosher...
-		elif st == 1: output = sshc.after # but for some reason works
+		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+		if st == 0: output = sshc.before # TODO: fix this line
+		elif st == 1: output = sshc.after # TODO: fix this line
 		results[server] = formatOutput(output, command)
 	
 	# Close the SSH connection...
