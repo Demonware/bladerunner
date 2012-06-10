@@ -5,8 +5,10 @@ Backstory
 ---------
 
 This is my first Python project and I'm sure there are many bugs.
-clcout is intended to be a simple way to run a command in sequence across a 
-multitude of hosts and group the output in an easy to read fashion.
+
+clcout is intended to be a simple way to run a command or list of 
+commands in sequence across a multitude of hosts and group the
+output in an easy to read fashion.
 
 Install
 -------
