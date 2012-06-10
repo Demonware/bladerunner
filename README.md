@@ -5,8 +5,10 @@ Backstory
 ---------
 
 This is my first Python project and I'm sure there are many bugs.
-clcout is a simple way to run a command in sequence across a 
-multitude of hosts and group the output in an easy to read fashion.
+
+clcout is intended to be a simple way to run a command or list of 
+commands in sequence across a multitude of hosts and group the
+output in an easy to read fashion.
 
 Install
 -------
@@ -15,7 +17,7 @@ The install process is very simple on most distros:
 
 - Install python and python-pexpect.
  ln -s clcout/clcout.py ~/bin/clcout
-- Run "clcout COMMAND [HOST ...]"
+- Run "clcout [OPTIONS] COMMAND [HOST...]"
 
 Usage Tips
 ----------
@@ -39,10 +41,12 @@ and verbose as well for other platforms and shell prompts. Some of
 this work is already started with the username flag.
 
 The output from commands is not the best yet, but with the use of
-the -v flag, you can see everything, and even though the output
+the -v flag*, you can see everything, and even though the output
 may be suppressed, you can know that the commands were issued at
 at least. Also, something TODO is to add in error catchers for
 timeouts and wrong passwords, etc.
+
+*currently broken
 
 Copyright and License
 ---------------------
