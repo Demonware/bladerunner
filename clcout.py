@@ -112,10 +112,15 @@ results = {}
 for server in ips:	
 	# Spawn the SSH connection
 	sshc = pexpect.spawn('ssh ' + userName + "@" + server)
-
+	
 	# Expect the password prompt. TODO: add in ssh key first time auth question/response
-	sshc.expect(userName + '@.*assword:')
-	if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+	try:
+		sshc.expect(userName + '@.*assword:')
+		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+	except:
+		results[server] = 'clcout did not recieve a password prompt, aborting.\n'
+		sshc.terminate()
+		continue
 
 	# Send the password, expect a shell prompt.
 	sshc.sendline(myPass)
