@@ -50,7 +50,6 @@ def hasLetters(letters):
 			break
 	return foundOne
 
-
 def formatOutput(s, command):
 	s = s.split('\r\n') # tty connections use windows line-endings, because of reasons
 	s.pop(-1) # last output line is the return to shell prompt
