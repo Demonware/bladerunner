@@ -4,8 +4,6 @@ clcout - Clustered Command Output
 Backstory
 ---------
 
-This is my first Python project and I'm sure there are many bugs.
-
 clcout is intended to be a simple way to run a command or list of 
 commands in sequence across a multitude of hosts and group the
 output in an easy to read fashion.
@@ -37,13 +35,8 @@ Bugs & TODO
 -----------
 
 Currently there is no handler for accepting a new ssh certificate.
-The shell prompt pattern match could be considerably more precise 
-and verbose as well for other platforms and shell prompts. Some of
-this work is already started with the username flag.
-
-The output grouping from commands is not the best yet, but with the use of
-the -v flag you can see everything.  Also, something TODO is to add in more
-error catchers for timeouts and wrong passwords, etc.
+Also, the shell prompt pattern matching could be both more precise 
+and verbose to accommodate other platforms and shell prompts.
 
 Copyright and License
 ---------------------
