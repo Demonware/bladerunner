@@ -41,16 +41,13 @@ def canFind(name):
 	except socket.error:
 		return False
 
-def tharBeLettersHere(letters):
+def hasLetters(letters):
 	letters = repr(letters) # thanks taurgal from #python@freenode.irc
 	foundOne = False
 	for c in letters:
 		if 65 <= ord(c) <= 90 or 97 <= ord(c) <= 122:
 			foundOne = True
 			break
-	for shell in shellPrompts:
-		if re.search(shell, letters) != '':
-			return False
 	return foundOne
 
 def formatOutput(s, command):
@@ -58,7 +55,7 @@ def formatOutput(s, command):
 	formattedOutput = ""
 	for line in s:
 		line = line.strip(os.linesep)
-		if (line.find(command) < 0 and tharBeLettersHere(str(line)) == True):
+		if (line.find(command) == -1 and hasLetters(line) == True):
 			formattedOutput += line + "\n"
 	return formattedOutput
 
@@ -107,7 +104,7 @@ if (len(ips) == 0):
 	help(False)
 
 myPass = getpass.getpass("Password: ")
-shellPrompts = ['[' + userName + '@.*]', userName + '@.*:~$', userName + '@.*:~#'] # unicode('\x5B.*\@.*\x5D')
+shellPrompts = ['\[' + userName + '\@.*\]', userName + '\@.*\:\~\$', userName + '\@.*\:\~\#', userName + '\@\.*\:\~'] # unicode('\x5B.*\@.*\x5D')
 results = {}
 for server in ips:	
 	# Spawn the SSH connection
@@ -137,20 +134,17 @@ for server in ips:
 		multiOutput = ''
 		for line in myFile:
 			line = line.strip()
+			print line
 			sshc.sendline(line)
 			st = sshc.expect(shellPrompts)
 			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
-			if st == 0: output = sshc.before # TODO: fix this line
-			elif st == 1: output = sshc.after # TODO: fix this line
-			multiOutput += formatOutput(output, line)
+			multiOutput += formatOutput(sshc.before, line)
 		results[server] = multiOutput
 	else:
 		sshc.sendline(command)
 		st = sshc.expect(shellPrompts)
 		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
-		if st == 0: output = sshc.before # TODO: fix this line
-		elif st == 1: output = sshc.after # TODO: fix this line
-		results[server] = formatOutput(output, command)
+		results[server] = formatOutput(sshc.before, command)
 	
 	# Close the SSH connection...
 	sshc.sendline('exit')
