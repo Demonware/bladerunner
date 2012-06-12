@@ -66,12 +66,9 @@ if (len(sys.argv) < 2):
 
 sys.argv.pop(0) # first argv is self... trash it
 command = sys.argv.pop(0)
-verbose = False
 userName = getpass.getuser()
-fileName = ''
-timeDelay = 0
-timeLoops = 0
-shellPrompts = ['\[' + userName + '\@.*\]', userName + '\@.*\:\~\$', userName + '\@.*\:\~\#'] # unicode('\x5B.*\@.*\x5D')
+shellPrompts = ['\[' + userName + '\@.*\]', userName + '\@.*\:\~\$', userName + '\@.*\:\~\#']
+verbose, fileName, timeDelay, timeLoops = False, '', 0, 0
 
 while command[0] == '-': # switch was passed
 	if command[1] == 'v':
