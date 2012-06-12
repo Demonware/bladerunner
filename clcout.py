@@ -43,16 +43,17 @@ def canFind(name):
 		return False
 
 def hasLetters(letters):
-	letters = repr(letters) # thanks taurgal from #python@freenode.irc
-	foundOne = False # not actually convinced this works 100% yet though
+	foundOne = False
 	for c in letters:
 		if 65 <= ord(c) <= 90 or 97 <= ord(c) <= 122:
 			foundOne = True
 			break
 	return foundOne
 
+
 def formatOutput(s, command):
 	s = s.split('\r\n') # tty connections use windows line-endings, because of reasons
+	s.pop(-1) # last output line is the return to shell prompt
 	formattedOutput = ""
 	for line in s:
 		line = line.strip(os.linesep)
@@ -70,7 +71,7 @@ userName = getpass.getuser()
 fileName = ''
 timeDelay = 0
 timeLoops = 0
-shellPrompts = ['\[' + userName + '\@.*\]', userName + '\@.*\:\~\$', userName + '\@.*\:\~\#', userName + '\@\.*\:\~'] # unicode('\x5B.*\@.*\x5D')
+shellPrompts = ['\[' + userName + '\@.*\]', userName + '\@.*\:\~\$', userName + '\@.*\:\~\#'] # unicode('\x5B.*\@.*\x5D')
 
 while command[0] == '-': # switch was passed
 	if command[1] == 'v':
@@ -133,8 +134,13 @@ for server in ips:
 
 	# Send the password, expect a shell prompt.
 	sshc.sendline(myPass)
-	sshc.expect(shellPrompts)
-	if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+	try:
+		sshc.expect(shellPrompts, 10)
+		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+	except:
+		results[server] = 'clcout did not log in properly, aborting.\n'
+		sshc.terminate()
+		continue
 
 	# If we're loading commands from a file, do that, otherwise just send the one
 	if fileName != '':
@@ -148,13 +154,13 @@ for server in ips:
 			line = line.strip()
 			print line
 			sshc.sendline(line)
-			st = sshc.expect(shellPrompts)
+			sshc.expect(shellPrompts)
 			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 			multiOutput += formatOutput(sshc.before, line)
 		results[server] = multiOutput
 	else:
 		sshc.sendline(command)
-		st = sshc.expect(shellPrompts)
+		sshc.expect(shellPrompts)
 		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 		results[server] = formatOutput(sshc.before, command)
 	
