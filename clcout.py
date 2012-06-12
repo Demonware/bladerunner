@@ -10,7 +10,7 @@ import sys
 import socket
 import getpass
 import os
-import re
+import time
 
 try:
 	import pexpect
@@ -24,6 +24,7 @@ def help(verboseHelp):
 		print "Options:"
 		print "  -f <filename>\t\tLoad commands from a file"
 		print "  -h \t\t\tThis help screen"
+		print "  -t <seconds>\t\tAdd a time delay between hosts"
 		print "  -u <username>\t\tUse a different user name to connect"
 		print "  -v\t\t\tVerbose output"
 	sys.exit(0)
@@ -43,7 +44,7 @@ def canFind(name):
 
 def hasLetters(letters):
 	letters = repr(letters) # thanks taurgal from #python@freenode.irc
-	foundOne = False
+	foundOne = False # not actually convinced this works 100% yet though
 	for c in letters:
 		if 65 <= ord(c) <= 90 or 97 <= ord(c) <= 122:
 			foundOne = True
@@ -67,10 +68,18 @@ command = sys.argv.pop(0)
 verbose = False
 userName = getpass.getuser()
 fileName = ''
+timeDelay = 0
+timeLoops = 0
+shellPrompts = ['\[' + userName + '\@.*\]', userName + '\@.*\:\~\$', userName + '\@.*\:\~\#', userName + '\@\.*\:\~'] # unicode('\x5B.*\@.*\x5D')
 
 while command[0] == '-': # switch was passed
 	if command[1] == 'v':
 		verbose = True
+	elif command[1] == 't':
+		try:
+			timeDelay = int(sys.argv.pop(0))
+		except:
+			help(False)
 	elif command[1] == 'u':
 		try:
 			userName = sys.argv.pop(0)
@@ -104,9 +113,12 @@ if (len(ips) == 0):
 	help(False)
 
 myPass = getpass.getpass("Password: ")
-shellPrompts = ['\[' + userName + '\@.*\]', userName + '\@.*\:\~\$', userName + '\@.*\:\~\#', userName + '\@\.*\:\~'] # unicode('\x5B.*\@.*\x5D')
 results = {}
-for server in ips:	
+for server in ips:
+	# Wait around for a while if we've been told to
+	if timeDelay > 0 and timeLoops > 0:
+		time.sleep(timeDelay)
+	
 	# Spawn the SSH connection
 	sshc = pexpect.spawn('ssh ' + userName + "@" + server)
 	
@@ -149,6 +161,8 @@ for server in ips:
 	# Close the SSH connection...
 	sshc.sendline('exit')
 	sshc.terminate()
+
+	timeLoops += 1
 
 # Makes a list of servers and replies, consolodates dupes
 finalResults = {}

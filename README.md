@@ -29,6 +29,7 @@ passed to it if it does not resolve to an ip.
 You can use the following options with clcout:
 	
 	-f <filename>		Import commands from a file
+	-t <seconds>		Add a time delay between hosts
 	-u <username>		Use a different user to SSH
 	-v					Prints verbose output
 
@@ -40,13 +41,9 @@ The shell prompt pattern match could be considerably more precise
 and verbose as well for other platforms and shell prompts. Some of
 this work is already started with the username flag.
 
-The output from commands is not the best yet, but with the use of
-the -v flag*, you can see everything, and even though the output
-may be suppressed, you can know that the commands were issued at
-at least. Also, something TODO is to add in error catchers for
-timeouts and wrong passwords, etc.
-
-*currently broken
+The output grouping from commands is not the best yet, but with the use of
+the -v flag you can see everything.  Also, something TODO is to add in more
+error catchers for timeouts and wrong passwords, etc.
 
 Copyright and License
 ---------------------
