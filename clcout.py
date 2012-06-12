@@ -149,7 +149,6 @@ for server in ips:
 		multiOutput = ''
 		for line in myFile:
 			line = line.strip()
-			print line
 			sshc.sendline(line)
 			sshc.expect(shellPrompts)
 			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
