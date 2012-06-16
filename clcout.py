@@ -15,7 +15,7 @@ import time
 try:
 	import pexpect
 except:
-	print >>sys.stderr, "Missing pexpect. Try apt-get install python-pexpect"
+	sys.stderr.write("Missing pexpect. Try apt-get install python-pexpect\n")
 	sys.exit(1)
 
 def help(verboseHelp):
@@ -143,8 +143,8 @@ for server in ips:
 		try:
 			myFile = open(fileName,'r')
 		except:
-			print >>sys.stderr, "Could not open file: " + fileName
-			sys.exit(1)
+			sys.stderr.write("Could not open file: " + fileName + "\n")
+			sys.exit(1) # this check should probably happen earlier...
 		multiOutput = ''
 		for line in myFile:
 			line = line.strip(os.linesep)
