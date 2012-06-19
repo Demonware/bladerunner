@@ -27,7 +27,7 @@ def help(verboseHelp):
 		print "  -m <pattern>\t\tMatch a specific shell prompt"
 		print "  -t <seconds>\t\tAdd a time delay between hosts"
 		print "  -u <username>\t\tUse a different user name to connect"
-		print "  -v\t\t\tVerbose output"
+		print "  -v \t\t\tVerbose output"
 	sys.exit(0)
 
 def isIP(i):

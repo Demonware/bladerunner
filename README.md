@@ -36,8 +36,8 @@ Bugs & TODO
 -----------
 
 Currently there is no handler for accepting a new ssh certificate.
-Also, the shell prompt pattern matching could be both more precise 
-and verbose to accommodate other platforms and shell prompts.
+Please do let me know if you come across bugs or think of a feature
+you'd like to see.
 
 Copyright and License
 ---------------------
