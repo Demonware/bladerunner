@@ -24,6 +24,7 @@ def help(verboseHelp):
 		print "Options:"
 		print "  -f <filename>\t\tLoad commands from a file"
 		print "  -h \t\t\tThis help screen"
+		print "  -m <pattern>\t\tMatch a specific shell prompt"
 		print "  -t <seconds>\t\tAdd a time delay between hosts"
 		print "  -u <username>\t\tUse a different user name to connect"
 		print "  -v\t\t\tVerbose output"
@@ -87,6 +88,11 @@ while command[0] == '-': # switch was passed
 			fileName = sys.argv.pop(0) 
 		except:
 			help(False)
+	elif command[1] == 'm':
+		try:
+			shellPrompts = sys.argv.pop(0)
+		except:
+			help(False)
 	else:
 		help(True)
 	try:
@@ -104,7 +110,7 @@ for x in sys.argv:
 	else:
 		dns = canFind(x)
 		if dns != False and isIP(dns) == True: # or names that resolve to IPs
-			ips.append(x) # this bugs me... doing two dns lookups per server. but you know, it looks prettier in the end... :|
+			ips.append(x) # this bugs me... doing two dns lookups per server  :|
 
 if (len(ips) == 0):
 	help(False)
@@ -121,7 +127,7 @@ for server in ips:
 	
 	# Expect the password prompt. TODO: add in ssh key first time auth question/response
 	try:
-		sshc.expect(userName + '@.*assword:')
+		sshc.expect([userName + '@.*assword:', 'Password:', 'password:'], 10)
 		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 	except:
 		results[server] = 'clcout did not recieve a password prompt, aborting.\n'
@@ -149,15 +155,21 @@ for server in ips:
 		for line in myFile:
 			line = line.strip(os.linesep)
 			sshc.sendline(line)
-			sshc.expect(shellPrompts)
-			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
-			multiOutput += formatOutput(sshc.before, line)
+			try:
+				sshc.expect(shellPrompts, 20)
+				if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+				multiOutput += formatOutput(sshc.before, line)
+			except:
+				multiOutput = 'clcout did not return after issuing the command.\n'
 		results[server] = multiOutput
 	else:
 		sshc.sendline(command)
-		sshc.expect(shellPrompts)
-		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
-		results[server] = formatOutput(sshc.before, command)
+		try:
+			sshc.expect(shellPrompts, 20)
+			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+			results[server] = formatOutput(sshc.before, command)
+		except:
+			results[server] = 'clcout did not return after issuing the command.\n'
 	
 	# Close the SSH connection...
 	sshc.sendline('exit')
