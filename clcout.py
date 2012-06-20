@@ -101,7 +101,7 @@ while command[0] == '-': # switch was passed
 			help(False)
 	elif command[1] == 'm':
 		try:
-			shellPrompts = sys.argv.pop(0)
+			shellPrompts.insert(0, sys.argv.pop(0))
 		except:
 			help(False)
 	elif command[1] == 'k':
