@@ -38,9 +38,8 @@ You can use the following options with clcout:
 Bugs & TODO
 -----------
 
-Currently there is no handler for accepting a new ssh certificate.
-Please let me know if you come across bugs or think of a feature
-you'd like to see.
+If you come across bugs feel free to report them via email or edit [the wiki bug page](https://github.com/a-tal/clcout/wiki/Bugs).
+Also see the wiki for the full list of [things to do](https://github.com/a-tal/clcout/wiki/Things-to-do).
 
 Copyright and License
 ---------------------
