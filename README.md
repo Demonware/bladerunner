@@ -27,6 +27,7 @@ passed to it if it does not resolve to an ip.
 You can use the following options with clcout:
 	
 	-f <filename>		Import commands from a file
+	-k <keyfile>		Use a non-default ssh key
 	-m <pattern>		Match a specific shell prompt
 	-n					No password
 	-t <seconds>		Add a time delay between hosts

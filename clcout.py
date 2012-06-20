@@ -24,6 +24,7 @@ def help(verboseHelp):
 		print "Options:"
 		print "  -f <filename>\t\tLoad commands from a file"
 		print "  -h \t\t\tThis help screen"
+		print "  -k <keyfile>\t\tUse a non-default ssh key"
 		print "  -m <pattern>\t\tMatch a specific shell prompt"
 		print "  -n \t\t\tNo password prompt"
 		print "  -t <seconds>\t\tAdd a time delay between hosts"
@@ -68,8 +69,7 @@ if (len(sys.argv) < 2):
 sys.argv.pop(0) # first argv is self... trash it
 command = sys.argv.pop(0)
 userName = getpass.getuser()
-sendPassword, verbose, fileName, timeDelay, timeLoops = True, False, '', 0, 0
-results, finalResults = {}, {}
+sendPassword, verbose, fileName, keyFile, timeDelay, timeLoops, results, finalResults = True, False, '', '', 0, 0, {}, {}
 shellPrompts = [ '\[' + userName + '\@.*\]', \
 		 userName + '\@.*\:\~\$', \
 		 userName + '\@.*\:\~\#', \
@@ -98,6 +98,11 @@ while command[0] == '-': # switch was passed
 	elif command[1] == 'm':
 		try:
 			shellPrompts = sys.argv.pop(0)
+		except:
+			help(False)
+	elif command[1] == 'k':
+		try:
+			keyFile = sys.argv.pop(0)
 		except:
 			help(False)
 	else:
@@ -132,12 +137,17 @@ for server in ips:
 		time.sleep(timeDelay)
 	
 	# Spawn the SSH connection
-	sshc = pexpect.spawn('ssh ' + userName + "@" + server)
+	if keyFile != '' and os.path.isfile(keyFile):
+		sshc = pexpect.spawn('ssh -i ' + keyFile + ' ' + userName + "@" + server)
+	else:
+		sshc = pexpect.spawn('ssh ' + userName + "@" + server)
 	
 	if sendPassword == True:
 		# Expect a password prompt, if we're supposed to.
 		try:
-			sshc.expect([userName + '@.*assword:', 'Password:', 'password:'], 10)
+			passwordPrompts = [userName + '\@.*assword:', 'assword:']
+			if keyFile != '': passwordPrompts.append("\'" + keyFile + "\':")
+			sshc.expect(passwordPrompts, 10)
 			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 		except:
 			results[server] = 'clcout did not recieve a password prompt, aborting.\n'
