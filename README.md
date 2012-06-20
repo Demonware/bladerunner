@@ -38,8 +38,8 @@ Bugs & TODO
 -----------
 
 Currently there is no handler for accepting a new ssh certificate.
-Please do let me know if you come across bugs or think of a feature
-you'd like to see.
+Please let me know if you come across bugs or think of a feature
+you'd like to see. TODO: add sudo capabilities.
 
 Copyright and License
 ---------------------
