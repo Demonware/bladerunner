@@ -30,6 +30,7 @@ You can use the following options with clcout:
 	-k <keyfile>		Use a non-default ssh key
 	-m <pattern>		Match a specific shell prompt
 	-n					No password
+	-s					Second password
 	-t <seconds>		Add a time delay between hosts
 	-u <username>		Use a different user to SSH
 	-v					Prints verbose output
@@ -39,7 +40,7 @@ Bugs & TODO
 
 Currently there is no handler for accepting a new ssh certificate.
 Please let me know if you come across bugs or think of a feature
-you'd like to see. TODO: add sudo capabilities.
+you'd like to see.
 
 Copyright and License
 ---------------------

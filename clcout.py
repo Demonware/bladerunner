@@ -27,6 +27,7 @@ def help(verboseHelp):
 		print "  -k <keyfile>\t\tUse a non-default ssh key"
 		print "  -m <pattern>\t\tMatch a specific shell prompt"
 		print "  -n \t\t\tNo password prompt"
+		print "  -s \t\t\tSecond password"
 		print "  -t <seconds>\t\tAdd a time delay between hosts"
 		print "  -u <username>\t\tUse a different user name to connect"
 		print "  -v \t\t\tVerbose output"
@@ -69,17 +70,20 @@ if (len(sys.argv) < 2):
 sys.argv.pop(0) # first argv is self... trash it
 command = sys.argv.pop(0)
 userName = getpass.getuser()
-sendPassword, verbose, fileName, keyFile, timeDelay, timeLoops, results, finalResults = True, False, '', '', 0, 0, {}, {}
+sendPassword, sudoPassword, verbose, fileName, keyFile, myPass, sudoPass, timeDelay, timeLoops, results, finalResults = True, False, False, '', '', '', '', 0, 0, {}, {}
+passwordPrompts = [userName + '\@.*assword:', 'assword:', userName + ':']
 shellPrompts = [ '\[' + userName + '\@.*\]', \
-		 userName + '\@.*\:\~\$', \
-		 userName + '\@.*\:\~\#', \
-		 'mysql\>', 'ftp\>', 'telnet\>' ]
+		 userName + '\@.*:~\$', \
+		 userName + '\@.*:~\#', \
+		 'mysql>', 'ftp>', 'telnet>' ]
 
 while command[0] == '-': # switch was passed
 	if command[1] == 'v':
 		verbose = True
 	elif command[1] == 'n':
 		sendPassword = False
+	elif command[1] == 's':
+		sudoPassword = True
 	elif command[1] == 't':
 		try:
 			timeDelay = int(sys.argv.pop(0))
@@ -131,6 +135,12 @@ if sendPassword == True:
 	myPass = getpass.getpass("Password: ")
 	sendPassword = len(myPass) > 0
 
+if sudoPassword == True:
+	sudoPass = getpass.getpass("Second password: ")
+
+if sudoPass == '':
+	sudoPass = myPass
+
 for server in ips:
 	# Wait around for a while if we've been told to
 	if timeDelay > 0 and timeLoops > 0:
@@ -145,12 +155,11 @@ for server in ips:
 	if sendPassword == True:
 		# Expect a password prompt, if we're supposed to.
 		try:
-			passwordPrompts = [userName + '\@.*assword:', 'assword:']
 			if keyFile != '': passwordPrompts.append("\'" + keyFile + "\':")
 			sshc.expect(passwordPrompts, 10)
 			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 		except:
-			results[server] = 'clcout did not recieve a password prompt, aborting.\n'
+			results[server] = 'clcout did not receive a password prompt, aborting.\n'
 			sshc.terminate()
 			continue
 		# Send the password, expect a shell prompt.
@@ -176,18 +185,28 @@ for server in ips:
 			line = line.strip(os.linesep)
 			sshc.sendline(line)
 			try:
-				sshc.expect(shellPrompts, 20)
+				sc = sshc.expect(shellPrompts + passwordPrompts, 20)
 				if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 				multiOutput += formatOutput(sshc.before, line)
+				if sc >= len(shellPrompts) and len(sudoPass) > 0: # recieved a password prompt
+					sshc.sendline(myPass)
+					sshc.expect(shellPrompts, 20)
+					if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+					multiOutput += formatOutput(sshc.before, line)
 			except:
 				multiOutput = 'clcout did not return after issuing the command.\n'
 		results[server] = multiOutput
 	else:
 		sshc.sendline(command)
 		try:
-			sshc.expect(shellPrompts, 20)
+			sc = sshc.expect(shellPrompts + passwordPrompts, 20)
 			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 			results[server] = formatOutput(sshc.before, command)
+			if sc >= len(shellPrompts) and len(sudoPass) > 0: # got a password? send a password
+				sshc.sendline(sudoPass)
+				sshc.expect(shellPrompts, 20)
+				if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+				results[server] = formatOutput(sshc.before, command)
 		except:
 			results[server] = 'clcout did not return after issuing the command.\n'
 	
@@ -197,7 +216,7 @@ for server in ips:
 
 	timeLoops += 1
 
-# Makes a list of servers and replies, consolodates dupes
+# Makes a list of servers and replies, consolidates dupes
 for server, reply in results.iteritems():
 	found = False
 	for repl, serv in finalResults.iteritems():
