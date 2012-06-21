@@ -64,6 +64,19 @@ def formatOutput(s, command):
 			formattedOutput += line + "\n"
 	return formattedOutput
 
+def sendCommand(sshc, c):
+	sshc.sendline(c)
+	try:
+		sc = sshc.expect(shellPrompts + passwordPrompts, 20)
+		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+		if sc >= len(shellPrompts) and len(sudoPass) > 0:
+			sshc.sendline(sudoPass) # sudo/jumpbox password
+			sshc.expect(shellPrompts, 20)
+			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+		return formatOutput(sshc.before, c)
+	except:
+		return -1
+
 if (len(sys.argv) < 2):
 	help(False)
 
@@ -178,31 +191,18 @@ for server in ips:
 		multiOutput = ''
 		for line in myFile:
 			line = line.strip(os.linesep)
-			sshc.sendline(line)
-			try:
-				sc = sshc.expect(shellPrompts + passwordPrompts, 20)
-				if verbose == True: sys.stdout.write(sshc.before + sshc.after)
-				multiOutput += formatOutput(sshc.before, line)
-				if sc >= len(shellPrompts) and len(sudoPass) > 0: # recieved a password prompt
-					sshc.sendline(myPass)
-					sshc.expect(shellPrompts, 20)
-					if verbose == True: sys.stdout.write(sshc.before + sshc.after)
-					multiOutput += formatOutput(sshc.before, line)
-			except:
-				multiOutput = 'clcout did not return after issuing the command.\n'
+			runCheck = sendCommand(sshc, line)
+			if runCheck != -1: 
+				multiOutput += runCheck
+			else:
+				multiOutput = 'clcout did not return after issuing the command\n';
+				break
 		results[server] = multiOutput
 	else:
-		sshc.sendline(command)
-		try:
-			sc = sshc.expect(shellPrompts + passwordPrompts, 20)
-			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
-			results[server] = formatOutput(sshc.before, command)
-			if sc >= len(shellPrompts) and len(sudoPass) > 0: # got a password? send a password
-				sshc.sendline(sudoPass)
-				sshc.expect(shellPrompts, 20)
-				if verbose == True: sys.stdout.write(sshc.before + sshc.after)
-				results[server] = formatOutput(sshc.before, command)
-		except:
+		runCheck = sendCommand(sshc, command)
+		if runCheck != -1:
+			results[server] = runCheck
+		else:
 			results[server] = 'clcout did not return after issuing the command.\n'
 	
 	# Close the SSH connection...
