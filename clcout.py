@@ -70,7 +70,7 @@ if (len(sys.argv) < 2):
 sys.argv.pop(0) # first argv is self... trash it
 command = sys.argv.pop(0)
 userName = getpass.getuser()
-sendPassword, sudoPassword, verbose, fileName, keyFile, myPass, sudoPass, timeDelay, timeLoops, results, finalResults = True, False, False, '', '', '', '', 0, 0, {}, {}
+ips, sendPassword, sudoPassword, verbose, fileName, keyFile, myPass, sudoPass, timeDelay, timeLoops, results, finalResults = [], True, False, False, '', '', '', '', 0, 0, {}, {}
 passwordPrompts = [userName + '\@.*assword:', 'assword:', userName + ':']
 shellPrompts = [ '\[' + userName + '\@.*\]', \
 		 userName + '\@.*:~\$', \
@@ -119,14 +119,9 @@ while command[0] == '-': # switch was passed
 if fileName != '': # if we're loading commands from a file, put what is in "command"
 	sys.argv.insert(0,command) # back into the list of potential servers
 
-ips = []
 for x in sys.argv:
-	if isIP(x): # search for IP addresses
+	if isIP(x) or canFind(x) != False: # search for IPs or names that resolve
 		ips.append(x)
-	else:
-		dns = canFind(x)
-		if dns != False and isIP(dns) == True: # or names that resolve to IPs
-			ips.append(x) # this bugs me... doing two dns lookups per server  :|
 
 if (len(ips) == 0):
 	help(False)
