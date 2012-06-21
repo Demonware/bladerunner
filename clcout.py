@@ -67,7 +67,7 @@ def formatOutput(s, command):
 def sendCommand(sshc, c):
 	sshc.sendline(c)
 	try:
-		sc = sshc.expect(shellPrompts + passwordPrompts, 10)
+		sc = sshc.expect(shellPrompts + passwordPrompts, 20)
 		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 		if sc >= len(shellPrompts) and len(sudoPass) > 0:
 			sshc.sendline(sudoPass) # sudo/jumpbox password
