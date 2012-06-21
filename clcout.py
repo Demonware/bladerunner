@@ -75,7 +75,7 @@ def sendCommand(sshc, c):
 			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 		return formatOutput(sshc.before, c)
 	except:
-		return -1
+		return 'clcout did return after issuing the command\n'
 
 if (len(sys.argv) < 2):
 	help(False)
@@ -160,8 +160,8 @@ for server in ips:
 	else:
 		sshc = pexpect.spawn('ssh ' + userName + "@" + server)
 	
-	if sendPassword == True:
-		# Expect a password prompt, if we're supposed to.
+	# Expect a password prompt, if we're supposed to.
+	if sendPassword == True: 
 		try:
 			if keyFile != '': passwordPrompts.append("\'" + keyFile + "\':")
 			sshc.expect(passwordPrompts, 10)
@@ -170,10 +170,10 @@ for server in ips:
 			results[server] = 'clcout did not receive a password prompt, aborting.\n'
 			sshc.terminate()
 			continue
-		# Send the password, expect a shell prompt.
 		sshc.sendline(myPass)
-
-	try:
+		
+	# by this time we should have a shell prompt
+	try: 
 		sshc.expect(shellPrompts, 10)
 		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 	except:
@@ -182,7 +182,7 @@ for server in ips:
 		continue
 
 	# If we're loading commands from a file, do that, otherwise just send the one
-	if fileName != '':
+	if fileName != '': 
 		try:
 			myFile = open(fileName,'r')
 		except:
@@ -192,23 +192,16 @@ for server in ips:
 		for line in myFile:
 			line = line.strip(os.linesep)
 			runCheck = sendCommand(sshc, line)
-			if runCheck != -1: 
-				multiOutput += runCheck
-			else:
-				multiOutput = 'clcout did not return after issuing the command\n';
+			multiOutput += runCheck
+			if runCheck == 'clcout did not return after issuing the command\n':
 				break
 		results[server] = multiOutput
 	else:
-		runCheck = sendCommand(sshc, command)
-		if runCheck != -1:
-			results[server] = runCheck
-		else:
-			results[server] = 'clcout did not return after issuing the command.\n'
+		results[server] = sendCommand(sshc, command)
 	
-	# Close the SSH connection...
+	# Close the SSH connection, do it again
 	sshc.sendline('exit')
 	sshc.terminate()
-
 	timeLoops += 1
 
 # Makes a list of servers and replies, consolidates dupes
