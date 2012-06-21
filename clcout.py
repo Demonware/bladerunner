@@ -67,7 +67,7 @@ def formatOutput(s, command):
 def sendCommand(sshc, c):
 	sshc.sendline(c)
 	try:
-		sc = sshc.expect(shellPrompts + passwordPrompts, 20)
+		sc = sshc.expect(shellPrompts + passwordPrompts, 10)
 		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 		if sc >= len(shellPrompts) and len(sudoPass) > 0:
 			sshc.sendline(sudoPass) # sudo/jumpbox password
@@ -75,7 +75,7 @@ def sendCommand(sshc, c):
 			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 		return formatOutput(sshc.before, c)
 	except:
-		return 'clcout did return after issuing the command\n'
+		return 'clcout did not return after issuing the command: ' + c + '\n'
 
 if (len(sys.argv) < 2):
 	help(False)
@@ -193,7 +193,7 @@ for server in ips:
 			line = line.strip(os.linesep)
 			runCheck = sendCommand(sshc, line)
 			multiOutput += runCheck
-			if runCheck == 'clcout did not return after issuing the command\n':
+			if runCheck == 'clcout did not return after issuing the command: ' + line + '\n':
 				break
 		results[server] = multiOutput
 	else:
