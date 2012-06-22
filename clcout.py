@@ -77,82 +77,73 @@ def sendCommand(sshc, c):
 	except:
 		return 'clcout did not return after issuing the command: ' + c + '\n'
 
-if (len(sys.argv) < 2):
-	help(False)
-
+if (len(sys.argv) < 2): help(False)
 sys.argv.pop(0) # first argv is self... trash it
 command = sys.argv.pop(0)
 userName = getpass.getuser()
 ips, sendPassword, sudoPassword, verbose, fileName, keyFile, myPass, sudoPass, timeDelay, timeLoops, results, finalResults = [], True, False, False, '', '', '', '', 0, 0, {}, {}
 passwordPrompts = [userName + '\@.*assword:', 'assword:', userName + ':']
-shellPrompts = [ '\[' + userName + '\@.*\]', \
-		 userName + '\@.*:~\$', \
-		 userName + '\@.*:~\#', \
-		 'mysql>', 'ftp>', 'telnet>' ]
+shellPrompts = [ '\[' + userName + '\@.*\]',  userName + '\@.*:~\$',  userName + '\@.*:~\#', 'mysql>', 'ftp>', 'telnet>' ]
 
 while command[0] == '-': # switch was passed
-	if command[1] == 'v':
-		verbose = True
-	elif command[1] == 'n':
-		sendPassword = False
-	elif command[1] == 's':
-		sudoPassword = True
-	elif command[1] == 't':
-		try:
-			timeDelay = int(sys.argv.pop(0))
-		except:
+	for x in range(len(command)):
+		if command[x] == '-':
+			continue
+		elif command[x] == 'f':
+			try:
+				fileName = sys.argv.pop(0)
+			except IndexError:
+				help(False)
+		elif command[x] == 'h':
+			help(True)
+		elif command[x] == 'k':
+			try:
+				keyFile = sys.argv.pop(0)
+			except IndexError:
+				help(False)
+		elif command[x] == 'm':
+			try:
+				shellPrompts.insert(0, sys.argv.pop(0))
+			except IndexError:
+				help(False)
+		elif command[x] == 'n':
+			sendPassword = False
+		elif command[x] == 's':
+			sudoPassword = True
+		elif command[x] == 't':
+			try:
+				timeDelay = int(sys.argv.pop(0))
+			except IndexError:
+				help(False)
+		elif command[x] == 'u':
+			try:
+				userName = sys.argv.pop(0)
+			except IndexError:
+				help(False)
+		elif command[x] == 'v':
+			verbose = True
+		else:
 			help(False)
-	elif command[1] == 'u':
-		try:
-			userName = sys.argv.pop(0)
-		except:
-			help(False)
-	elif command[1] == 'f':
-		try:
-			fileName = sys.argv.pop(0) 
-		except:
-			help(False)
-	elif command[1] == 'm':
-		try:
-			shellPrompts.insert(0, sys.argv.pop(0))
-		except:
-			help(False)
-	elif command[1] == 'k':
-		try:
-			keyFile = sys.argv.pop(0)
-		except:
-			help(False)
-	else:
-		help(True)
 	try:
 		command = sys.argv.pop(0)
-	except:
+	except IndexError:
 		help(False)
 
-if fileName != '': # if we're loading commands from a file, put what is in "command"
-	sys.argv.insert(0,command) # back into the list of potential servers
+if fileName != '': sys.argv.insert(0,command) 
 
 for x in sys.argv:
-	if isIP(x) or canFind(x) != False: # search for IPs or names that resolve
-		ips.append(x)
+	if isIP(x) or canFind(x) != False: ips.append(x)
 
-if (len(ips) == 0):
-	help(False)
-
+if (len(ips) == 0): help(False)
 if sendPassword == True:
 	myPass = getpass.getpass("Password: ")
 	sendPassword = len(myPass) > 0
-
-if sudoPassword == True:
-	sudoPass = getpass.getpass("Second password: ")
-
-if sudoPass == '':
-	sudoPass = myPass
+if sudoPassword == True: sudoPass = getpass.getpass("Second password: ")
+if sudoPass == '': sudoPass = myPass
 
 for server in ips:
 	# Wait around for a while if we've been told to
-	if timeDelay > 0 and timeLoops > 0:
-		time.sleep(timeDelay)
+	if timeDelay > 0 and timeLoops > 0: time.sleep(timeDelay)
 	
 	# Spawn the SSH connection
 	if keyFile != '' and os.path.isfile(keyFile):
@@ -193,8 +184,7 @@ for server in ips:
 			line = line.strip(os.linesep)
 			runCheck = sendCommand(sshc, line)
 			multiOutput += runCheck
-			if runCheck == 'clcout did not return after issuing the command: ' + line + '\n':
-				break
+			if runCheck == 'clcout did not return after issuing the command: ' + line + '\n': break
 		results[server] = multiOutput
 	else:
 		results[server] = sendCommand(sshc, command)
@@ -211,8 +201,7 @@ for server, reply in results.iteritems():
 		if (repl.find(reply) >= 0):
 			serv.append(server)
 			found = True 
-	if found == False:
-		finalResults[reply] = [server]
+	if found == False: finalResults[reply] = [server]
 
 # Prints results
 if verbose == False:
