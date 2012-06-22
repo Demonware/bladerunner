@@ -81,7 +81,7 @@ if (len(sys.argv) < 2): help(False)
 sys.argv.pop(0) # first argv is self... trash it
 command = sys.argv.pop(0)
 userName = getpass.getuser()
-ips, sendPassword, sudoPassword, verbose, fileName, keyFile, myPass, sudoPass, timeDelay, timeLoops, results, finalResults = [], True, False, False, '', '', '', '', 0, 0, {}, {}
+sendPassword, sudoPassword, verbose, fileName, keyFile, myPass, sudoPass, timeDelay = True, False, False, '', '', '', '', 0
 passwordPrompts = [userName + '\@.*assword:', 'assword:', userName + ':']
 shellPrompts = [ '\[' + userName + '\@.*\]',  userName + '\@.*:~\$',  userName + '\@.*:~\#', 'mysql>', 'ftp>', 'telnet>' ]
 
@@ -129,11 +129,10 @@ while command[0] == '-': # switch was passed
 	except IndexError:
 		help(False)
 
+ips = []
 if fileName != '': sys.argv.insert(0,command) 
-
 for x in sys.argv:
 	if isIP(x) or canFind(x) != False: ips.append(x)
-
 if (len(ips) == 0): help(False)
 if sendPassword == True:
 	myPass = getpass.getpass("Password: ")
@@ -141,6 +140,7 @@ if sendPassword == True:
 if sudoPassword == True: sudoPass = getpass.getpass("Second password: ")
 if sudoPass == '': sudoPass = myPass
 
+timeLoops, results = 0, {}
 for server in ips:
 	# Wait around for a while if we've been told to
 	if timeDelay > 0 and timeLoops > 0: time.sleep(timeDelay)
@@ -195,6 +195,7 @@ for server in ips:
 	timeLoops += 1
 
 # Makes a list of servers and replies, consolidates dupes
+finalResults = {}
 for server, reply in results.iteritems():
 	found = False
 	for repl, serv in finalResults.iteritems():
