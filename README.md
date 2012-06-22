@@ -35,6 +35,15 @@ You can use the following options with clcout:
 	-u <username>		Use a different user to SSH
 	-v					Prints verbose output
 
+You can send more than one flag in the same switch, flags requiring a 
+second value must be given in the same order. For example, 
+
+	clcout -fnkm ~/file.txt ~/keys/id_rsa 'core-router#' 192.168.0.1
+
+works the same as:
+
+	clcout -mnfk 'core-router#' ~/file.txt ~/keys/id_rsa 192.168.0.1
+
 Bugs & TODO
 -----------
 
