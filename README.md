@@ -44,6 +44,10 @@ works the same as:
 
 	clcout -mnfk 'core-router#' ~/file.txt ~/keys/id_rsa 192.168.0.1
 
+which is also equivalent to:
+
+	clcout -f ~/file.txt -nk ~/keys/id_rsa -m 'core-router#' 192.168.0.1
+
 Bugs & TODO
 -----------
 
