@@ -129,11 +129,8 @@ while command[0] == '-': # switch was passed
 	except IndexError:
 		help(False)
 
-ips = []
 if fileName != '': sys.argv.insert(0,command) 
-for x in sys.argv:
-	if isIP(x) or canFind(x) != False: ips.append(x)
-if (len(ips) == 0): help(False)
+if (len(sys.argv) == 0): help(False)
 if sendPassword == True:
 	myPass = getpass.getpass("Password: ")
 	sendPassword = len(myPass) > 0
@@ -141,7 +138,11 @@ if sudoPassword == True: sudoPass = getpass.getpass("Second password: ")
 if sudoPass == '': sudoPass = myPass
 
 timeLoops, results = 0, {}
-for server in ips:
+for server in sys.argv:
+	if isIP(server) == False and canFind(server) == False: 
+		results[server] = 'clcout could not resolve ' + server + '\n'
+		continue
+
 	# Wait around for a while if we've been told to
 	if timeDelay > 0 and timeLoops > 0: time.sleep(timeDelay)
 	
