@@ -20,10 +20,6 @@ The install process is very simple on most distros:
 Usage Tips
 ----------
 
-Almost any command should be possible to issue through good quote
-usage and bash knowledge. clcout will silently ignore extra input
-passed to it if it does not resolve to an ip.
-
 You can use the following options with clcout:
 	
 	-f <filename>		Import commands from a file
@@ -35,18 +31,8 @@ You can use the following options with clcout:
 	-u <username>		Use a different user to SSH
 	-v					Prints verbose output
 
-You can send more than one flag in the same switch, flags requiring a 
-second value must be given in the same order. For example, 
-
-	clcout -fnkm ~/file.txt ~/keys/id_rsa 'core-router#' 192.168.0.1
-
-works the same as:
-
-	clcout -mnfk 'core-router#' ~/file.txt ~/keys/id_rsa 192.168.0.1
-
-which is also equivalent to:
-
-	clcout -f ~/file.txt -nk ~/keys/id_rsa -m 'core-router#' 192.168.0.1
+Using a file with a list of commands in it is an easy way to execute complex 
+tasks on a multitude of remote hosts.
 
 Bugs & TODO
 -----------
