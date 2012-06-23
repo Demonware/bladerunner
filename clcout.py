@@ -139,7 +139,8 @@ if sudoPass == '': sudoPass = myPass
 
 timeLoops, results = 0, {}
 for server in sys.argv:
-	if isIP(server) == False and canFind(server) == False: 
+	ipAddress = canFind(server)
+	if ipAddress == False or isIP(ipAddress) == False: 
 		results[server] = 'clcout could not resolve ' + server + '\n'
 		continue
 
@@ -148,9 +149,9 @@ for server in sys.argv:
 	
 	# Spawn the SSH connection
 	if keyFile != '' and os.path.isfile(keyFile):
-		sshc = pexpect.spawn('ssh -i ' + keyFile + ' ' + userName + "@" + server)
+		sshc = pexpect.spawn('ssh -i ' + keyFile + ' ' + userName + "@" + ipAddress)
 	else:
-		sshc = pexpect.spawn('ssh ' + userName + "@" + server)
+		sshc = pexpect.spawn('ssh ' + userName + "@" + ipAddress)
 	
 	# Expect a password prompt, if we're supposed to.
 	if sendPassword == True: 
