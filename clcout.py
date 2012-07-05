@@ -81,7 +81,7 @@ if (len(sys.argv) < 2): help(False)
 sys.argv.pop(0) # first argv is self... trash it
 command = sys.argv.pop(0)
 userName = getpass.getuser()
-sendPassword, sudoPassword, verbose, fileName, keyFile, myPass, sudoPass, timeDelay = True, False, False, '', '', '', '', 0
+sendPassword, sudoPassword, verbose, fileName, keyFile, commandFile, myPass, sudoPass, timeDelay = True, False, False, '', '', '', '', '', 0
 passwordPrompts = [userName + '\@.*assword:', 'assword:', userName + ':']
 shellPrompts = [ '\[' + userName + '\@.*\]',  userName + '\@.*:~\$',  userName + '\@.*:~\#', 'mysql>', 'ftp>', 'telnet>' ]
 
@@ -94,6 +94,11 @@ while command[0] == '-': # switch was passed
 				fileName = sys.argv.pop(0)
 			except IndexError:
 				sys.stderr.write("Missing filename (provided -f)\n")
+				sys.exit(1)
+			try:
+				commandFile = open(fileName,'r')
+			except IOError:
+				sys.stderr.write("Could not open file: %s\n" % fileName)
 				sys.exit(1)
 		elif command[x] == 'h':
 			help(True)
@@ -181,14 +186,9 @@ for server in sys.argv:
 		continue
 
 	# If we're loading commands from a file, do that, otherwise just send the one
-	if fileName != '': 
-		try:
-			myFile = open(fileName,'r')
-		except:
-			sys.stderr.write("Could not open file: %s\n" % fileName)
-			sys.exit(1) # this check should probably happen earlier...
+	if commandFile != '':
 		multiOutput = ''
-		for line in myFile:
+		for line in commandFile:
 			line = line.strip(os.linesep)
 			runCheck = sendCommand(sshc, line)
 			multiOutput += runCheck
