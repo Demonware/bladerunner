@@ -93,19 +93,22 @@ while command[0] == '-': # switch was passed
 			try:
 				fileName = sys.argv.pop(0)
 			except IndexError:
-				help(False)
+				sys.stderr.write("Missing filename (provided -f)\n")
+				sys.exit(1)
 		elif command[x] == 'h':
 			help(True)
 		elif command[x] == 'k':
 			try:
 				keyFile = sys.argv.pop(0)
 			except IndexError:
-				help(False)
+				sys.stderr.write("Missing filename (provided -k)\n")
+				sys.exit(1)
 		elif command[x] == 'm':
 			try:
 				shellPrompts.insert(0, sys.argv.pop(0))
 			except IndexError:
-				help(False)
+				sys.stderr.write("Missing pattern (provided -m)\n")
+				sys.exit(1)
 		elif command[x] == 'n':
 			sendPassword = False
 		elif command[x] == 's':
@@ -114,16 +117,19 @@ while command[0] == '-': # switch was passed
 			try:
 				timeDelay = int(sys.argv.pop(0))
 			except IndexError:
-				help(False)
+				sys.stderr.write("Missing seconds (provided -t)\n")
+				sys.exit(1)
 		elif command[x] == 'u':
 			try:
 				userName = sys.argv.pop(0)
 			except IndexError:
-				help(False)
+				sys.stderr.write("Missing username (provided -u)\n")
+				sys.exit(1)
 		elif command[x] == 'v':
 			verbose = True
 		else:
-			help(False)
+			sys.stderr.write("Unknown option: -%s\n" % command[x])
+			sys.exit(1)
 	try:
 		command = sys.argv.pop(0)
 	except IndexError:
@@ -141,7 +147,7 @@ timeLoops, results = 0, {}
 for server in sys.argv:
 	ipAddress = canFind(server)
 	if ipAddress == False or isIP(ipAddress) == False: 
-		results[server] = 'clcout could not resolve ' + server + '\n'
+		results[server] = 'clcout could not resolve %s\n' % server
 		continue
 
 	# Wait around for a while if we've been told to
@@ -179,7 +185,7 @@ for server in sys.argv:
 		try:
 			myFile = open(fileName,'r')
 		except:
-			sys.stderr.write("Could not open file: " + fileName + "\n")
+			sys.stderr.write("Could not open file: %s\n" % fileName)
 			sys.exit(1) # this check should probably happen earlier...
 		multiOutput = ''
 		for line in myFile:
