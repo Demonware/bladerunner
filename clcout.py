@@ -64,20 +64,20 @@ def formatOutput(s, command):
 		line = line.strip(os.linesep)
 		if (line.find(command) == -1 and hasLetters(line)):
 			formattedOutput += "%s\n" % line
-	return formattedOutput
+	return formattedOutput or False
 
 def sendCommand(sshc, c):
-	sshc.sendline(c)
-#try:
-	sc = sshc.expect(shellPrompts + passwordPrompts, 20)
-	if verbose: sys.stdout.write(sshc.before + sshc.after)
-	if sc >= len(shellPrompts) and len(sudoPass) > 0:
-		sshc.sendline(sudoPass) # sudo password
-		sshc.expect(shellPrompts, 20)
+	try:
+		sshc.sendline(c)
+		sc = sshc.expect(shellPrompts + passwordPrompts, 20)
 		if verbose: sys.stdout.write(sshc.before + sshc.after)
-	return formatOutput(sshc.before, c)
-#except:
-#	return False
+		if sc >= len(shellPrompts) and len(sudoPass) > 0:
+			sshc.sendline(sudoPass) # sudo password
+			sshc.expect(shellPrompts, 20)
+			if verbose: sys.stdout.write(sshc.before + sshc.after)
+		return formatOutput(sshc.before, c)
+	except:
+		return False
 
 def errorQuit(error):
 	sys.stderr.write("%s\n" % error)
@@ -104,7 +104,7 @@ def runCommands(sshc):
 			time.sleep(timeDelay)
 		
 		# hop into the next box if we're doing that
-		if not sshc or not jumpBox or not sshc.isalive():
+		if not jumpBox or not sshc or not sshc.isalive():
 			sshc = spawnSshc(ipAddress)
 		else:
 			sshc.sendline("ssh %s@%s" % (userName, server))
@@ -113,7 +113,7 @@ def runCommands(sshc):
 			if not logIn(sshc, myPass, None): results[server] = 'clcout did not receive a password prompt, aborting.\n'
 		else:
 			try: 
-				sshc.expect(shellPrompts, 10)
+				sshc.expect(shellPrompts, 20)
 				if verbose: sys.stdout.write(sshc.before + sshc.after)
 			except:
 				results[server] = 'clcout did not log in properly, aborting.\n'
@@ -131,8 +131,7 @@ def runCommands(sshc):
 				multiOutput += lineOutput
 			results[server] = multiOutput
 		else:
-			cOut = sendCommand(sshc, command)
-			results[server] = cOut or 'clcout did not return after issuing the command: %s\n' % command
+			results[server] = sendCommand(sshc, command) or 'clcout did not return after issuing the command: %s\n' % command
 		
 		closeSshc(sshc, False) if jumpBox else closeSshc(sshc, True)
 		timeLoops += 1
