@@ -61,7 +61,7 @@ def formatOutput(s, command):
 	for line in s:
 		line = line.strip(os.linesep)
 		if (line.find(command) == -1 and hasLetters(line) == True):
-			formattedOutput += line + "\n"
+			formattedOutput += "%s\n" % line
 	return formattedOutput
 
 def sendCommand(sshc, c):
@@ -75,15 +75,15 @@ def sendCommand(sshc, c):
 			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 		return formatOutput(sshc.before, c)
 	except:
-		return 'clcout did not return after issuing the command: ' + c + '\n'
+		return 'clcout did not return after issuing the command: %s\n' % c
 
 if (len(sys.argv) < 2): help(False)
 sys.argv.pop(0) # first argv is self... trash it
 command = sys.argv.pop(0)
 userName = getpass.getuser()
 sendPassword, sudoPassword, verbose, fileName, keyFile, commandFile, myPass, sudoPass, timeDelay = True, False, False, '', '', '', '', '', 0
-passwordPrompts = [userName + '\@.*assword:', 'assword:', userName + ':']
-shellPrompts = [ '\[' + userName + '\@.*\]',  userName + '\@.*:~\$',  userName + '\@.*:~\#', 'mysql>', 'ftp>', 'telnet>' ]
+passwordPrompts = ['%s\@.*assword:' % userName, 'assword:', '%s:' % userName]
+shellPrompts = ['\[%s\@.*\]' % userName, '%s\@.*:~\$' % userName, '%s\@.*:~\#' % userName, 'mysql>', 'ftp>', 'telnet>' ]
 
 while command[0] == '-': # switch was passed
 	for x in range(len(command)):
@@ -160,14 +160,14 @@ for server in sys.argv:
 	
 	# Spawn the SSH connection
 	if keyFile != '' and os.path.isfile(keyFile):
-		sshc = pexpect.spawn('ssh -i ' + keyFile + ' ' + userName + "@" + ipAddress)
+		sshc = pexpect.spawn('ssh -i %s %s@%s' % (keyFile, userName, ipAddress))
 	else:
-		sshc = pexpect.spawn('ssh ' + userName + "@" + ipAddress)
+		sshc = pexpect.spawn('ssh %s@%s' % (userName, ipAddress))
 	
 	# Expect a password prompt, if we're supposed to.
 	if sendPassword == True: 
 		try:
-			if keyFile != '': passwordPrompts.append("\'" + keyFile + "\':")
+			if keyFile != '': passwordPrompts.append("\'%s\':" % keyFile)
 			sshc.expect(passwordPrompts, 10)
 			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
 		except:
@@ -192,7 +192,7 @@ for server in sys.argv:
 			line = line.strip(os.linesep)
 			runCheck = sendCommand(sshc, line)
 			multiOutput += runCheck
-			if runCheck == 'clcout did not return after issuing the command: ' + line + '\n': break
+			if runCheck == 'clcout did not return after issuing the command: %s\n' % line: break
 		results[server] = multiOutput
 	else:
 		results[server] = sendCommand(sshc, command)
