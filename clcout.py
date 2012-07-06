@@ -68,17 +68,17 @@ def formatOutput(s, command):
 
 def sendCommand(sshc, c):
 	sshc.sendline(c)
-	try:
-		sc = sshc.expect(shellPrompts + passwordPrompts, 20)
+#try:
+	sc = sshc.expect(shellPrompts + passwordPrompts, 20)
+	if verbose: sys.stdout.write(sshc.before + sshc.after)
+	if sc >= len(shellPrompts) and len(sudoPass) > 0:
+		sshc.sendline(sudoPass) # sudo password
+		sshc.expect(shellPrompts, 20)
 		if verbose: sys.stdout.write(sshc.before + sshc.after)
-		if sc >= len(shellPrompts) and len(sudoPass) > 0:
-			sshc.sendline(sudoPass) # sudo password
-			sshc.expect(shellPrompts, 20)
-			if verbose: sys.stdout.write(sshc.before + sshc.after)
-		return formatOutput(sshc.before, c)
-	except:
-		return 'clcout did not return after issuing the command: %s\n' % c
-	
+	return formatOutput(sshc.before, c)
+#except:
+#	return False
+
 def errorQuit(error):
 	sys.stderr.write("%s\n" % error)
 	sys.exit(1)
@@ -103,50 +103,60 @@ def runCommands(sshc):
 		if timeDelay > 0 and timeLoops > 0:
 			time.sleep(timeDelay)
 		
-		if not sshc or not jumpBox:
+		# hop into the next box if we're doing that
+		if not sshc or not jumpBox or not sshc.isalive():
 			sshc = spawnSshc(ipAddress)
 		else:
 			sshc.sendline("ssh %s@%s" % (userName, server))
 		
 		if sendPassword:
-			if not logIn(sshc): results[server] = 'clcout did not receive a password prompt, aborting.\n'
-		
-		# by this time we should have a shell prompt
-		try: 
-			sshc.expect(shellPrompts, 10)
-			if verbose: sys.stdout.write(sshc.before + sshc.after)
-		except:
-			results[server] = 'clcout did not log in properly, aborting.\n'
-			sshc.terminate()
-			continue
+			if not logIn(sshc, myPass, None): results[server] = 'clcout did not receive a password prompt, aborting.\n'
+		else:
+			try: 
+				sshc.expect(shellPrompts, 10)
+				if verbose: sys.stdout.write(sshc.before + sshc.after)
+			except:
+				results[server] = 'clcout did not log in properly, aborting.\n'
+				continue
 	
 		# If we're loading commands from a file, do that, otherwise just send the one
 		if commandFile:
 			multiOutput = ''
 			for line in commandFile:
 				line = line.strip(os.linesep)
-				runCheck = sendCommand(sshc, line)
-				multiOutput += runCheck
-				if runCheck == 'clcout did not return after issuing the command: %s\n' % line: break
+				lineOutput = sendCommand(sshc, line)
+				if not lineOutput:
+					multiOutput = 'clcout did not return after issuing the command: %s\n' % line
+					break
+				multiOutput += lineOutput
 			results[server] = multiOutput
 		else:
-			results[server] = sendCommand(sshc, command)
+			cOut = sendCommand(sshc, command)
+			results[server] = cOut or 'clcout did not return after issuing the command: %s\n' % command
 		
 		closeSshc(sshc, False) if jumpBox else closeSshc(sshc, True)
 		timeLoops += 1
 		
 	return results, sshc
 			
-def logIn(sshc):
+def logIn(sshc, password, st):
 	try:
-		if keyFile: passwordPrompts.append("\'%s\':" % keyFile)
-		st = sshc.expect(passwordPrompts, 10)
+		if not st:
+			st = sshc.expect(passwordPrompts, 10)
+			if verbose: 
+				sys.stdout.write(sshc.before + sshc.after)
+
+		if st == 0 and password != 'yes':
+			logIn(sshc, 'yes', st)
+		
+		sshc.sendline(password)
+		
+		if password == 'yes': # recursive logIn function to handle (yes/no)? certificate queries
+			logIn(sshc, myPass, None)
+		
+		sshc.expect(shellPrompts, 10)
 		if verbose: sys.stdout.write(sshc.before + sshc.after)
-		if st == 0:
-			sshc.sendline("yes")
-			sshc.expect(passwordPrompts, 10)
-			if verbose: sys.stdout.write(sshc.before + sshc.after)
-		sshc.sendline(myPass)
+
 		return True
 	except:
 		return False
@@ -154,7 +164,8 @@ def logIn(sshc):
 def closeSshc(sshc, terminate):
 	# Close the SSH connection, do it again
 	sshc.sendline('exit')
-	if terminate: sshc.terminate()
+	if terminate:
+		sshc.terminate()
 	return True
 
 if (len(sys.argv) < 2): help(False)
@@ -189,6 +200,7 @@ while command[0] == '-': # switch was passed
 		elif command[x] == 'k':
 			try:
 				keyFile = sys.argv.pop(0)
+				passwordPrompts.append("\'%s\':" % keyFile)
 			except IndexError:
 				errorQuit("Missing filename (provided -k)")
 		elif command[x] == 'm':
@@ -246,7 +258,7 @@ if jumpBox:
 		errorQuit('clcout could not resolve jumpbox: %s' % jumpBox)
 	sshc = spawnSshc(jumpBox)
 	if sendPassword:
-		if not logIn(sshc): errorQuit("clcout did not receive a jumpbox password prompt, aborting.")
+		if not logIn(sshc, myPass, None): errorQuit("clcout did not receive a jumpbox password prompt, aborting.")
 	try: 
 		sshc.expect(shellPrompts, 10)
 		if verbose: sys.stdout.write(sshc.before + sshc.after)
@@ -255,7 +267,6 @@ if jumpBox:
 	results, sshc = runCommands(sshc)
 else:
 	results, sshc = runCommands(None)
-	print results
 	
 closeSshc(sshc, True)
 
