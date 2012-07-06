@@ -23,6 +23,7 @@ Usage Tips
 You can use the following options with clcout:
 	
 	-f <filename>		Import commands from a file
+	-j <hostname>		Issue commands from a jumpbox
 	-k <keyfile>		Use a non-default ssh key
 	-m <pattern>		Match a specific shell prompt
 	-n					No password
