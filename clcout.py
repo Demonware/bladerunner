@@ -27,6 +27,7 @@ def help(verboseHelp):
 		print "  -k <keyfile>\t\tUse a non-default ssh key"
 		print "  -m <pattern>\t\tMatch a specific shell prompt"
 		print "  -n \t\t\tNo password prompt"
+		print "  -p <password>\t\tSupply the password on the command line"
 		print "  -s \t\t\tSecond password"
 		print "  -t <seconds>\t\tAdd a time delay between hosts"
 		print "  -u <username>\t\tUse a different user name to connect"
@@ -60,7 +61,7 @@ def formatOutput(s, command):
 	formattedOutput = ""
 	for line in s:
 		line = line.strip(os.linesep)
-		if (line.find(command) == -1 and hasLetters(line) == True):
+		if (line.find(command) == -1 and hasLetters(line)):
 			formattedOutput += "%s\n" % line
 	return formattedOutput
 
@@ -68,14 +69,18 @@ def sendCommand(sshc, c):
 	sshc.sendline(c)
 	try:
 		sc = sshc.expect(shellPrompts + passwordPrompts, 20)
-		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+		if verbose: sys.stdout.write(sshc.before + sshc.after)
 		if sc >= len(shellPrompts) and len(sudoPass) > 0:
 			sshc.sendline(sudoPass) # sudo/jumpbox password
 			sshc.expect(shellPrompts, 20)
-			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+			if verbose: sys.stdout.write(sshc.before + sshc.after)
 		return formatOutput(sshc.before, c)
 	except:
 		return 'clcout did not return after issuing the command: %s\n' % c
+	
+def errorQuit(error):
+	sys.stderr.write("%s\n" % error)
+	sys.exit(1)
 
 if (len(sys.argv) < 2): help(False)
 sys.argv.pop(0) # first argv is self... trash it
@@ -93,83 +98,90 @@ while command[0] == '-': # switch was passed
 			try:
 				fileName = sys.argv.pop(0)
 			except IndexError:
-				sys.stderr.write("Missing filename (provided -f)\n")
-				sys.exit(1)
+				errorQuit("Missing filename (provided -f)")
 			try:
 				commandFile = open(fileName,'r')
 			except IOError:
-				sys.stderr.write("Could not open file: %s\n" % fileName)
-				sys.exit(1)
+				errorQuit("Could not open file: %s" % fileName)
 		elif command[x] == 'h':
 			help(True)
 		elif command[x] == 'k':
 			try:
 				keyFile = sys.argv.pop(0)
 			except IndexError:
-				sys.stderr.write("Missing filename (provided -k)\n")
-				sys.exit(1)
+				errorQuit("Missing filename (provided -k)")
 		elif command[x] == 'm':
 			try:
 				shellPrompts.insert(0, sys.argv.pop(0))
 			except IndexError:
-				sys.stderr.write("Missing pattern (provided -m)\n")
-				sys.exit(1)
+				errorQuit("Missing pattern (provided -m)")
 		elif command[x] == 'n':
 			sendPassword = False
+		elif command[x] == 'p':
+			try:
+				myPass = sys.argv.pop(0)
+			except IndexError:
+				errorQuit("Missing password (provided -p)")
 		elif command[x] == 's':
 			sudoPassword = True
 		elif command[x] == 't':
 			try:
 				timeDelay = int(sys.argv.pop(0))
 			except IndexError:
-				sys.stderr.write("Missing seconds (provided -t)\n")
-				sys.exit(1)
+				errorQuit("Missing seconds (provided -t)")
 		elif command[x] == 'u':
 			try:
 				userName = sys.argv.pop(0)
 			except IndexError:
-				sys.stderr.write("Missing username (provided -u)\n")
-				sys.exit(1)
+				errorQuit("Missing username (provided -u)")
 		elif command[x] == 'v':
 			verbose = True
 		else:
-			sys.stderr.write("Unknown option: -%s\n" % command[x])
-			sys.exit(1)
+			errorQuit("Unknown option: -%s" % command[x])
 	try:
 		command = sys.argv.pop(0)
 	except IndexError:
 		help(False)
 
-if fileName != '': sys.argv.insert(0,command) 
-if (len(sys.argv) == 0): help(False)
-if sendPassword == True:
+if fileName:
+	sys.argv.insert(0,command) # we're not accepting a command via argv in this case 
+
+if (len(sys.argv) == 0):
+	help(False) # no hosts to run on
+	
+if sendPassword == True and not myPass:
 	myPass = getpass.getpass("Password: ")
-	sendPassword = len(myPass) > 0
-if sudoPassword == True: sudoPass = getpass.getpass("Second password: ")
-if sudoPass == '': sudoPass = myPass
+
+sendPassword = len(myPass) > 0
+
+if sudoPassword == True:
+	sudoPass = getpass.getpass("Second password: ")
+
+if not sudoPass: sudoPass = myPass
 
 timeLoops, results = 0, {}
 for server in sys.argv:
 	ipAddress = canFind(server)
-	if ipAddress == False or isIP(ipAddress) == False: 
+	if not ipAddress or not isIP(ipAddress): 
 		results[server] = 'clcout could not resolve %s\n' % server
 		continue
 
 	# Wait around for a while if we've been told to
-	if timeDelay > 0 and timeLoops > 0: time.sleep(timeDelay)
+	if timeDelay > 0 and timeLoops > 0:
+		time.sleep(timeDelay)
 	
 	# Spawn the SSH connection
-	if keyFile != '' and os.path.isfile(keyFile):
+	if keyFile and os.path.isfile(keyFile):
 		sshc = pexpect.spawn('ssh -i %s %s@%s' % (keyFile, userName, ipAddress))
 	else:
 		sshc = pexpect.spawn('ssh %s@%s' % (userName, ipAddress))
 	
 	# Expect a password prompt, if we're supposed to.
-	if sendPassword == True: 
+	if sendPassword: 
 		try:
-			if keyFile != '': passwordPrompts.append("\'%s\':" % keyFile)
+			if keyFile: passwordPrompts.append("\'%s\':" % keyFile)
 			sshc.expect(passwordPrompts, 10)
-			if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+			if verbose: sys.stdout.write(sshc.before + sshc.after)
 		except:
 			results[server] = 'clcout did not receive a password prompt, aborting.\n'
 			sshc.terminate()
@@ -179,14 +191,14 @@ for server in sys.argv:
 	# by this time we should have a shell prompt
 	try: 
 		sshc.expect(shellPrompts, 10)
-		if verbose == True: sys.stdout.write(sshc.before + sshc.after)
+		if verbose: sys.stdout.write(sshc.before + sshc.after)
 	except:
 		results[server] = 'clcout did not log in properly, aborting.\n'
 		sshc.terminate()
 		continue
 
 	# If we're loading commands from a file, do that, otherwise just send the one
-	if commandFile != '':
+	if commandFile:
 		multiOutput = ''
 		for line in commandFile:
 			line = line.strip(os.linesep)
@@ -210,10 +222,10 @@ for server, reply in results.iteritems():
 		if (repl.find(reply) >= 0):
 			serv.append(server)
 			found = True 
-	if found == False: finalResults[reply] = [server]
+	if not found: finalResults[reply] = [server]
 
 # Prints results
-if verbose == False:
+if not verbose:
 	for result, servers in finalResults.iteritems():
 		print ' '.join(servers) + " returned:"
 		sys.stdout.write(result)

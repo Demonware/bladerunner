@@ -26,6 +26,7 @@ You can use the following options with clcout:
 	-k <keyfile>		Use a non-default ssh key
 	-m <pattern>		Match a specific shell prompt
 	-n					No password
+	-p <password>		Supply the password on the command line
 	-s					Second password
 	-t <seconds>		Add a time delay between hosts
 	-u <username>		Use a different user to SSH
