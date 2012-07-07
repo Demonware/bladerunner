@@ -21,17 +21,23 @@ Usage Tips
 ----------
 
 You can use the following options with clcout:
-	
-	-f <filename>		Import commands from a file
-	-j <hostname>		Issue commands from a jumpbox
+
+	-f <filename>		Load commands from a file
+	-h					This help screen
 	-k <keyfile>		Use a non-default ssh key
 	-m <pattern>		Match a specific shell prompt
-	-n					No password
+	-n					No password prompt
 	-p <password>		Supply the password on the command line
 	-s					Second password
 	-t <seconds>		Add a time delay between hosts
-	-u <username>		Use a different user to SSH
-	-v					Prints verbose output
+	-u <username>		Use a different user name to connect
+	-v					Verbose output
+
+Jumpbox Options:
+	  -j <hostname>         Specify the jumpbox hostname
+	  -i <username>         Use a different username
+	  -P 	                		Prompt for a different password
+	  -S <password>         Supply a different password on the command line
 
 Using a file with a list of commands in it is an easy way to execute complex 
 tasks on a multitude of remote hosts.
