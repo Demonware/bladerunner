@@ -34,10 +34,11 @@ You can use the following options with clcout:
 	-v					Verbose output
 
 Jumpbox Options:
-	  -j <hostname>         Specify the jumpbox hostname
-	  -i <username>         Use a different username
-	  -P 	                		Prompt for a different password
-	  -S <password>         Supply a different password on the command line
+	  
+	-j <hostname>		Specify the jumpbox hostname
+	-i <username>		Use a different username
+	-P					Prompt for a different password
+	-S <password>		Supply a different password on the command line
 
 Using a file with a list of commands in it is an easy way to execute complex 
 tasks on a multitude of remote hosts.
