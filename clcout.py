@@ -61,30 +61,32 @@ class clcout:
 				break
 		return foundOne
 	
-	def formatOutput(self, s, command):
-		print "DEBUG||s=%s" % s ## DEBUG ## this is coming in as str(6)
+	def formatOutput(self, sshc, command):
+		s = sshc.before
 		s = s.split('\r\n') # tty connections use windows line-endings, because of reasons
 		s.pop(-1) # last output line is the return to shell prompt
-		formattedOutput = False
-		print "DEBUG||s=%s" % s ## DEBUG ## and by now empty
+		formattedOutput = ''
 		for l in s:
-			print "DEBUG||l=%s" % l ## DEBUG ## doesn't happen
 			l = l.strip(os.linesep)
 			if (l.find(command) == -1 and self.hasLetters(l)):
 				formattedOutput += "%s\n" % l
-		return formattedOutput ## DEBUG ## returns False
+		return formattedOutput
 	
 	def sendCommand(self, sshc, c):
 		try:
 			sshc.sendline(c)
-			sc = sshc.expect(self.shellPrompts + self.passwordPrompts, 20)
-			if self.verbose: sys.stdout.write(sshc.before + sshc.after)
-			if sc >= len(self.shellPrompts) and len(self.sudoPass) > 0:
-				sshc.sendline(self.sudoPass) # sudo password
-				sshc.expect(self.shellPrompts, 20)
+			if self.sudoPassword:
+				sc = sshc.expect(self.shellPrompts + self.passwordPrompts, 20)
 				if self.verbose: sys.stdout.write(sshc.before + sshc.after)
-			print "DEBUG||before=%s" % sshc.before
-			return self.formatOutput(sshc.before, c)
+				if sc >= len(self.shellPrompts) and len(self.sudoPass) > 0:
+					sshc.sendline(self.sudoPass) # sudo password
+					sshc.expect(self.shellPrompts, 20)
+					if self.verbose: sys.stdout.write(sshc.before + sshc.after)
+			else:
+				sc = sshc.expect(self.shellPrompts, 20)
+				if self.verbose: sys.stdout.write(sshc.before + sshc.after)
+			
+			return self.formatOutput(sshc, c)
 		except:
 			return False
 	
@@ -147,13 +149,11 @@ class clcout:
 					line = line.strip(os.linesep)
 					lineOutput = self.sendCommand(sshc, line)
 					if lineOutput == False:
-						print "DEBUG||LINE=%s||OUTPUT=%s" % (line, lineOutput) ## DEBUG ## line is correct, output is False. errors on first command when jumping
 						multiOutput = 'clcout did not return after issuing the command: %s\n' % line
 						break
 					multiOutput += lineOutput
 				commands.close()
 				results[server] = multiOutput
-				print "DEBUG||%s" % results
 			
 			self.closeSshc(sshc, False) if self.jumpBox else self.closeSshc(sshc, True)
 			timeLoops += 1
@@ -222,9 +222,9 @@ class clcout:
 				elif command[x] == 'i':
 					try:
 						self.jumpBoxUser = args.pop(0)
-						self.shellPrompts.append('[%s@.*]' % self.jumpBoxUser)
-						self.shellPrompts.append('%s@.*:~$' % self.jumpBoxUser)
-						self.shellPrompts.append('%s@.*:~#' % self.jumpBoxUser)
+						self.shellPrompts.append('\[%s\@.*\]' % self.jumpBoxUser)
+						self.shellPrompts.append('%s\@.*\:\~\$' % self.jumpBoxUser)
+						self.shellPrompts.append('%s\@.*\:\~\#' % self.jumpBoxUser)
 					except IndexError:
 						self.errorQuit("Missing jumpbox user (provided -i)")
 						
@@ -308,12 +308,6 @@ class clcout:
 			elif self.sendPassword:
 				if not self.logIn(sshc, self.myPass): self.errorQuit("clcout did not receive a jumpbox password prompt, aborting.")
 			
-			try: 
-				sshc.expect(self.shellPrompts, 20)
-				if self.verbose: sys.stdout.write(sshc.before + sshc.after)
-			except:
-				self.errorQuit("clcout did not log into the jumpbox properly, aborting.")
-			
 			results, sshc = self.runCommands(sshc, args)
 		else:
 			results, sshc = self.runCommands(None, args)
@@ -357,7 +351,7 @@ class clcout:
 		self.jumpBoxPassword = False
 		self.timeDelay = 0
 		self.passwordPrompts = ['(yes/no)\? ', '%s@.*assword:' % self.userName, 'assword:', '%s:' % self.userName]
-		self.shellPrompts = ['[%s@.*]' % self.userName, '%s@.*:~\$' % self.userName, '%s@.*:~#' % self.userName, 'mysql>', 'ftp>', 'telnet>']
+		self.shellPrompts = ['\[%s\@.*\]' % self.userName, '%s\@.*\:\~\$' % self.userName, '%s\@.*\:\~\#' % self.userName, 'mysql>', 'ftp>', 'telnet>']
 		
 		args = self.getArgs(args)
 		
