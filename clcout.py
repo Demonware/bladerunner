@@ -109,6 +109,7 @@ def runCommands(sshc):
 		else:
 			sshc.sendline("ssh %s@%s" % (userName, server))
 		
+		# send a password or expect the next shell prompt
 		if sendPassword:
 			if not logIn(sshc, myPass, None): results[server] = 'clcout did not receive a password prompt, aborting.\n'
 		else:
