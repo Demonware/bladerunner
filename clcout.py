@@ -153,7 +153,7 @@ class clcout:
 	def logIn(self, sshc, password, st):
 		try:
 			if not st:
-				st = sshc.expect(self.passwordPrompts, 10)
+				st = sshc.expect(self.passwordPrompts, 20)
 				if self.verbose: sys.stdout.write(sshc.before + sshc.after)
 	
 			if st == 0 and password != 'yes':
@@ -164,7 +164,7 @@ class clcout:
 			if password == 'yes': # recursive logIn function to handle (yes/no)? certificate queries
 				self.logIn(sshc, self.myPass, None)
 			
-			sshc.expect(self.shellPrompts, 10)
+			sshc.expect(self.shellPrompts, 20)
 			if self.verbose: sys.stdout.write(sshc.before + sshc.after)
 	
 			return True
