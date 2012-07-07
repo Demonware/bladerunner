@@ -5,7 +5,7 @@ clcout - Clustered Command Output
 Untested
 ---------
 
-You are in the dev branch. The [various scenarios|https://github.com/a-tal/clcout/wiki/Scenarios] with jumpboxes haven't all been tested. 
+You are in the dev branch. The [various scenarios](https://github.com/a-tal/clcout/wiki/Scenarios) with jumpboxes haven't all been tested. 
 
 Backstory
 ---------
