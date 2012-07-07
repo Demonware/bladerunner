@@ -41,7 +41,7 @@ Jumpbox Options:
 	-S <password>		Supply a different password on the command line
 
 Tip: Using a file with a list of commands in it is an easy way to execute complex 
-tasks on a multitude of remote hosts. Further explaination available [on the wiki](https://github.com/a-tal/clcout/wiki/Switches)
+tasks on a multitude of remote hosts. Further explaination available [on the wiki](https://github.com/a-tal/clcout/wiki/Switches).
 
 Bugs & TODO
 -----------
