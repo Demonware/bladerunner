@@ -336,8 +336,6 @@ class clcout:
 		self.timeDelay = 0
 		self.passwordPrompts = ['\(yes\/no\)\? ', '%s\@.*assword:' % self.userName, 'assword:', '%s:' % self.userName]
 		self.shellPrompts = ['\[%s\@.*\]' % self.userName, '%s\@.*:~\$' % self.userName, '%s\@.*:~\#' % self.userName, 'mysql>', 'ftp>', 'telnet>']
-
-		# TODO: set up a third password for jumpBoxUser to use
 		
 		args = self.getArgs(args)
 
