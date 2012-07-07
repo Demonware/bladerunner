@@ -40,7 +40,7 @@ Jumpbox Options:
 	-P					Prompt for a different password
 	-S <password>		Supply a different password on the command line
 
-Using a file with a list of commands in it is an easy way to execute complex 
+Tip: Using a file with a list of commands in it is an easy way to execute complex 
 tasks on a multitude of remote hosts.
 
 Bugs & TODO
