@@ -24,6 +24,7 @@ def printHelp(verboseHelp):
 		print "Options:"
 		print "  -f <filename>\t\tLoad commands from a file"
 		print "  -h \t\t\tThis help screen"
+		print "  -i <username>\t\tIntermediary username for jumpbox"
 		print "  -j <hostname>\t\tIssue commands from a jumpbox"
 		print "  -k <keyfile>\t\tUse a non-default ssh key"
 		print "  -m <pattern>\t\tMatch a specific shell prompt"
@@ -86,9 +87,17 @@ def errorQuit(error):
 def spawnSshc(targetBox):
 	# Spawn the SSH connection
 	if keyFile and os.path.isfile(keyFile):
-		sshc = pexpect.spawn('ssh -i %s %s@%s' % (keyFile, userName, targetBox))
+		if jumpBoxUser and targetBox == jumpBox:
+			sshc = pexpect.spawn('ssh -i %s %s@%s' % (keyFile, jumpBoxUser, targetBox))
+		else:
+			sshc = pexpect.spawn('ssh -i %s %s@%s' % (keyFile, userName, targetBox))
 	else:
-		sshc = pexpect.spawn('ssh %s@%s' % (userName, targetBox))
+		if jumpBoxUser and targetBox == jumpBox:
+			print "we're using a jumpbox user"
+			sshc = pexpect.spawn('ssh %s@%s' % (jumpBoxUser, targetBox))
+		else:
+			print "normal user login"
+			sshc = pexpect.spawn('ssh %s@%s' % (userName, targetBox))
 	return sshc
 
 def runCommands(sshc):
@@ -167,14 +176,17 @@ def closeSshc(sshc, terminate):
 	sshc.terminate() if terminate else sshc.expect(shellPrompts, 10)
 	return True
 
+## move all this to __init__ and setup and reference global vars better.
 if (len(sys.argv) < 2): printHelp(False)
 sys.argv.pop(0) # first argv is self... trash it
 command = sys.argv.pop(0)
 userName = getpass.getuser()
-sendPassword, sudoPassword, verbose, fileName, keyFile, commandFile, myPass, sudoPass, jumpBox, timeDelay = True, False, False, '', '', '', '', '', '', 0
+sendPassword, sudoPassword, verbose, fileName, keyFile, commandFile, myPass, sudoPass, jumpBox, jumpBoxUser, timeDelay = True, False, False, '', '', '', '', '', '', '', 0
 passwordPrompts = ['\(yes\/no\)\? ', '%s\@.*assword:' % userName, 'assword:', '%s:' % userName]
 shellPrompts = ['\[%s\@.*\]' % userName, '%s\@.*:~\$' % userName, '%s\@.*:~\#' % userName, 'mysql>', 'ftp>', 'telnet>' ]
+# set up a third password for jumpBoxUser to use
 
+## move this into a function
 while command[0] == '-': # switch was passed
 	for x in range(len(command)):
 		if command[x] == '-':
@@ -190,6 +202,14 @@ while command[0] == '-': # switch was passed
 				errorQuit("Could not open file: %s" % fileName)
 		elif command[x] == 'h':
 			printHelp(True)
+		elif command[x] == 'i':
+			try:
+				jumpBoxUser = sys.argv.pop(0)
+				shellPrompts.append('\[%s\@.*\]' % jumpBoxUser)
+				shellPrompts.append('%s\@.*:~\$' % jumpBoxUser)
+				shellPrompts.append('%s\@.*:~\#' % jumpBoxUser)
+			except IndexError:
+				errorQuit("Missing jumpbox user (provided -i)")
 		elif command[x] == 'j':
 			try:
 				jumpBox = sys.argv.pop(0)
