@@ -23,7 +23,7 @@ def printHelp(verboseHelp):
 	if verboseHelp == True:
 		print "Options:"
 		print "  -f <filename>\t\tLoad commands from a file"
-		print "  -h \t\t\tThis printHelp screen"
+		print "  -h \t\t\tThis help screen"
 		print "  -j <hostname>\t\tIssue commands from a jumpbox"
 		print "  -k <keyfile>\t\tUse a non-default ssh key"
 		print "  -m <pattern>\t\tMatch a specific shell prompt"
