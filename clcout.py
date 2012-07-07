@@ -18,12 +18,12 @@ except:
 	sys.stderr.write("Missing pexpect. Try apt-get install python-pexpect\n")
 	sys.exit(1)
 
-def help(verboseHelp):
+def printHelp(verboseHelp):
 	print "Usage: clcout [OPTIONS] COMMAND [HOST ...]"
 	if verboseHelp == True:
 		print "Options:"
 		print "  -f <filename>\t\tLoad commands from a file"
-		print "  -h \t\t\tThis help screen"
+		print "  -h \t\t\tThis printHelp screen"
 		print "  -j <hostname>\t\tIssue commands from a jumpbox"
 		print "  -k <keyfile>\t\tUse a non-default ssh key"
 		print "  -m <pattern>\t\tMatch a specific shell prompt"
@@ -161,22 +161,18 @@ def logIn(sshc, password, st):
 		return False
 	
 def closeSshc(sshc, terminate):
-	# Close the SSH connection, do it again
+	# Close the SSH connection, expect the jumpbox shell maybe
 	sshc.sendline('exit')
-	if terminate:
-		sshc.terminate()
-	else:
-		sshc.expect(shellPrompts, 10)
+	sshc.terminate() if terminate else sshc.expect(shellPrompts, 10)
 	return True
 
-if (len(sys.argv) < 2): help(False)
+if (len(sys.argv) < 2): printHelp(False)
 sys.argv.pop(0) # first argv is self... trash it
 command = sys.argv.pop(0)
 userName = getpass.getuser()
-sendPassword, sudoPassword, verbose, fileName, keyFile, commandFile, myPass, sudoPass, timeDelay = True, False, False, '', '', '', '', '', 0
+sendPassword, sudoPassword, verbose, fileName, keyFile, commandFile, myPass, sudoPass, jumpBox, timeDelay = True, False, False, '', '', '', '', '', '', 0
 passwordPrompts = ['\(yes\/no\)\? ', '%s\@.*assword:' % userName, 'assword:', '%s:' % userName]
 shellPrompts = ['\[%s\@.*\]' % userName, '%s\@.*:~\$' % userName, '%s\@.*:~\#' % userName, 'mysql>', 'ftp>', 'telnet>' ]
-jumpBox = ''
 
 while command[0] == '-': # switch was passed
 	for x in range(len(command)):
@@ -192,7 +188,7 @@ while command[0] == '-': # switch was passed
 			except IOError:
 				errorQuit("Could not open file: %s" % fileName)
 		elif command[x] == 'h':
-			help(True)
+			printHelp(True)
 		elif command[x] == 'j':
 			try:
 				jumpBox = sys.argv.pop(0)
@@ -235,13 +231,13 @@ while command[0] == '-': # switch was passed
 	try:
 		command = sys.argv.pop(0)
 	except IndexError:
-		help(False)
+		printHelp(False)
 
 if fileName:
 	sys.argv.insert(0,command) # we're not accepting a command via argv in this case 
 
 if (len(sys.argv) == 0):
-	help(False) # no hosts to run on
+	printHelp(False) # no hosts to run on
 	
 if sendPassword == True and not myPass:
 	myPass = getpass.getpass("Password: ")
@@ -257,14 +253,18 @@ if jumpBox:
 	ipAddress = canFind(jumpBox)
 	if not ipAddress or not isIP(ipAddress):
 		errorQuit('clcout could not resolve jumpbox: %s' % jumpBox)
+
 	sshc = spawnSshc(jumpBox)
+
 	if sendPassword:
 		if not logIn(sshc, myPass, None): errorQuit("clcout did not receive a jumpbox password prompt, aborting.")
+
 	try: 
 		sshc.expect(shellPrompts, 10)
 		if verbose: sys.stdout.write(sshc.before + sshc.after)
 	except:
 		errorQuit("clcout did not log into the jumpbox properly, aborting.")
+
 	results, sshc = runCommands(sshc)
 else:
 	results, sshc = runCommands(None)
@@ -279,7 +279,8 @@ for server, reply in results.iteritems():
 		if (repl.find(reply) >= 0):
 			serv.append(server)
 			found = True 
-	if not found: finalResults[reply] = [server]
+	if not found:
+		finalResults[reply] = [server]
 
 # Prints results
 if not verbose:
