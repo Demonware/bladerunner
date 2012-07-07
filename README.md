@@ -1,12 +1,6 @@
 clcout - Clustered Command Output
 =================================
 
-
-Untested
----------
-
-You are in the dev branch. The [various scenarios](https://github.com/a-tal/clcout/wiki/Scenarios) with jumpboxes haven't all been tested. 
-
 Backstory
 ---------
 
@@ -52,7 +46,9 @@ Bugs & TODO
 -----------
 
 If you come across bugs feel free to report them via email or edit [the wiki bug page](https://github.com/a-tal/clcout/wiki/Bugs).
-Also see the wiki for the full list of [things to do](https://github.com/a-tal/clcout/wiki/Things-to-do).
+Also see the wiki for the full list of [things to do](https://github.com/a-tal/clcout/wiki/Things-to-do), such as the [various scenarios](https://github.com/a-tal/clcout/wiki/Scenarios) with jumpboxes that haven't all been tested.
+
+Feedback/criticism is welcomed, this is my first python project and have only been using the language for a month or two.
 
 Copyright and License
 ---------------------
