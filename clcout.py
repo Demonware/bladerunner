@@ -165,6 +165,8 @@ def closeSshc(sshc, terminate):
 	sshc.sendline('exit')
 	if terminate:
 		sshc.terminate()
+	else:
+		sshc.expect(shellPrompts, 10)
 	return True
 
 if (len(sys.argv) < 2): help(False)
