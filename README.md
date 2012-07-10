@@ -1,4 +1,4 @@
-bladerunner - formerly clcout
+bladerunner
 =================================
 
 Backstory
@@ -6,7 +6,8 @@ Backstory
 
 bladerunner is intended to be a simple way to run a command or list of 
 commands in sequence across a multitude of hosts and group the
-output in an easy to read fashion.
+output in an easy to read fashion. bladerunner is formerly known as clcout,
+Clustered Command Output.
 
 Install
 -------
