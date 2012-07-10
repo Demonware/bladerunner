@@ -72,7 +72,7 @@ class clcout:
 				formattedOutput += "%s\n" % l
 		return formattedOutput
 	
-	def sendCommand(self, sshc, c):
+	def sendCommand(self, sshc, c, silent=False):
 		try:
 			sshc.sendline(c)
 			if self.sudoPassword:
@@ -83,12 +83,15 @@ class clcout:
 					sshc.expect(self.shellPrompts, 20)
 					if self.verbose: sys.stdout.write(sshc.before + sshc.after)
 			else:
-				sc = sshc.expect(self.shellPrompts, 20)
+				sshc.expect(self.shellPrompts, 20)
 				if self.verbose: sys.stdout.write(sshc.before + sshc.after)
-			
-			return self.formatOutput(sshc, c)
+
+			if not silent:
+				return self.formatOutput(sshc, c)
 		except:
 			return False
+
+		return True
 	
 	def errorQuit(self, error=''):
 		sys.stderr.write("%s\n" % error)
@@ -126,7 +129,8 @@ class clcout:
 			if not self.jumpBox or not sshc or not sshc.isalive():
 				sshc = self.spawnSshc(ipAddress)
 			else:
-				sshc.sendline("ssh %s@%s" % (self.userName, server))
+				print "ssh %s@%s" % (self.userName, server)
+				self.sendCommand(sshc, "ssh %s@%s" % (self.userName, server), True)
 			
 			# send a password or expect the next shell prompt
 			if self.sendPassword:
@@ -182,9 +186,8 @@ class clcout:
 			return False
 		
 	def closeSshc(self, sshc, terminate):
-		# Close the SSH connection, expect the jumpbox shell maybe
-		sshc.sendline('exit')
-		sshc.terminate() if terminate else sshc.expect(self.shellPrompts, 10)
+		self.sendCommand(sshc, 'exit', True)
+		if terminate: sshc.terminate()
 		return True
 	
 	def openFile(self, fileName, check=False):
@@ -310,6 +313,8 @@ class clcout:
 		if not self.sudoPass:
 			self.sudoPass = self.myPass
 		
+		return True
+	
 	def getResults(self, args):
 		if self.jumpBox:
 			ipAddress = self.canFind(self.jumpBox)
