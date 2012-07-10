@@ -1,4 +1,4 @@
-bladerunner - Clustered Command Output
+bladerunner - formerly clcout
 =================================
 
 Backstory
