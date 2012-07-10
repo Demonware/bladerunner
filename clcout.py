@@ -90,7 +90,7 @@ class clcout:
 		except:
 			return False
 	
-	def errorQuit(self, error):
+	def errorQuit(self, error=''):
 		sys.stderr.write("%s\n" % error)
 		sys.exit(1)
 		
@@ -295,6 +295,21 @@ class clcout:
 		args.insert(0,command)
 		return args
 	
+	def getPasswords(self):	
+		if self.jumpBoxPassword == True and self.jumpBox:
+			self.jumpBoxPassword = getpass.getpass("Jumpbox password:")
+		
+		if self.sendPassword == True and not self.myPass:
+			self.myPass = getpass.getpass("Password: ")
+		
+		self.sendPassword = len(self.myPass) > 0
+		
+		if self.sudoPassword == True:
+			self.sudoPass = getpass.getpass("Second password: ")
+		
+		if not self.sudoPass:
+			self.sudoPass = self.myPass
+		
 	def getResults(self, args):
 		if self.jumpBox:
 			ipAddress = self.canFind(self.jumpBox)
@@ -352,25 +367,13 @@ class clcout:
 		self.timeDelay = 0
 		self.passwordPrompts = ['(yes/no)\? ', '%s@.*assword:' % self.userName, 'assword:', '%s:' % self.userName]
 		self.shellPrompts = ['\[%s\@.*\]' % self.userName, '%s\@.*\:\~\$' % self.userName, '%s\@.*\:\~\#' % self.userName, 'mysql>', 'ftp>', 'telnet>']
-		
 		args = self.getArgs(args)
-		
-		if self.jumpBoxPassword == True and self.jumpBox:
-			self.jumpBoxPassword = getpass.getpass("Jumpbox password:")
-		
-		if self.sendPassword == True and not self.myPass:
-			self.myPass = getpass.getpass("Password: ")
-		
-		self.sendPassword = len(self.myPass) > 0
-		
-		if self.sudoPassword == True:
-			self.sudoPass = getpass.getpass("Second password: ")
-		
-		if not self.sudoPass:
-			self.sudoPass = self.myPass
-		
-		if not self.printResults(self.getResults(args)):
-			sys.exit(1)
+		try:	
+			self.getPasswords()
+			if not self.printResults(self.getResults(args)):
+				sys.exit(1)
+		except KeyboardInterrupt:
+			self.errorQuit()
 
 if __name__ == "__main__":
 	clcout(sys.argv)
