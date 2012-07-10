@@ -129,7 +129,6 @@ class clcout:
 			if not self.jumpBox or not sshc or not sshc.isalive():
 				sshc = self.spawnSshc(ipAddress)
 			else:
-				print "ssh %s@%s" % (self.userName, server)
 				self.sendCommand(sshc, "ssh %s@%s" % (self.userName, server), True)
 			
 			# send a password or expect the next shell prompt
