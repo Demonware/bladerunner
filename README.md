@@ -22,19 +22,19 @@ Usage Tips
 
 You can use the following options with bladerunner:
 
-	-f --filename		Load commands from a file
-	-h --help		This help screen
-	-j --jumpbox		Specify the jumpbox hostname
-	-k --keyfile		Use a non-default ssh key
-	-m --match		Match a specific shell prompt
-	-n --no-password	No password prompt
-	-p --password		Supply the password on the command line
+	-f --filename			Load commands from a file
+	-h --help				Display the help screen
+	-j --jumpbox			Specify the jumpbox hostname
+	-k --keyfile			Use a non-default ssh key
+	-m --match				Match a specific shell prompt
+	-n --no-password		No password prompt
+	-p --password			Supply the password on the command line
 	-P --jumpbox-password	Use a different password for the jumpbox
 	-s --second-password	Second password
-	-t --time-delay		Add a time delay between hosts
-	-u --username		Use a different user name to connect
+	-t --time-delay			Add a time delay between hosts
+	-u --username			Use a different user name to connect
 	-U --jumpbox-username	Use a different username for the jumpbox
-	-v --verbose		Verbose output
+	-v --verbose			Verbose output
 	  
 
 Tip: Using a file with a list of commands in it is an easy way to execute complex 
