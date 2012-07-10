@@ -346,7 +346,6 @@ class clcout:
 			if not found:
 				finalResults[reply] = [server]
 		
-		# sys.stdout.write(s results
 		if not self.verbose:
 			for result, servers in finalResults.iteritems():
 				sys.stdout.write(' '.join(servers) + " returned:\n")
