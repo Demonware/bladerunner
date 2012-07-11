@@ -290,7 +290,7 @@ class bladerunner:
 			elif opt == '-P' or opt == '--jumpbox-password':
 				jumpboxPass = arg or True
 			elif opt == '-s' or opt == '--secondpassword':
-				secondPassword = True
+				secondPassword = arg or True
 			elif opt == '-t' or opt == '--timedelay':
 				if not arg: self.printHelp()
 				timeDelay = float(arg)
