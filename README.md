@@ -12,6 +12,14 @@ Clustered Command Output.
 Install
 -------
 
+grab the latest version with:
+
+	git clone https://github.com/a-tal/bladerunner.git
+
+or update by going into the directory and running:
+	
+	git pull
+
 The install process is very simple on most distros:
 
 - Install python and python-pexpect.
