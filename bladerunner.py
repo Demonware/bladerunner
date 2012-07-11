@@ -282,19 +282,19 @@ class bladerunner:
 			elif opt == '-m' or opt == '--match':
 				if not arg: self.printHelp()
 				shellPrompts.insert(0, arg)
-			elif opt == '-n' or opt == '--nopassword':
+			elif opt == '-n' or opt == '--no-password':
 				usePassword = False
 			elif opt == '-p' or opt == '--password':
 				if not arg: self.printHelp()
 				password = arg
 			elif opt == '-P' or opt == '--jumpbox-password':
 				jumpboxPass = arg or True
-			elif opt == '-s' or opt == '--secondpassword':
+			elif opt == '-s' or opt == '--second-password':
 				secondPassword = arg or True
-			elif opt == '-t' or opt == '--timedelay':
+			elif opt == '-t' or opt == '--time-delay':
 				if not arg: self.printHelp()
 				timeDelay = float(arg)
-			elif opt == '-u' or opt == '--userName':
+			elif opt == '-u' or opt == '--username':
 				if not arg: self.printHelp()
 				userName = arg
 			elif opt == '-U' or opt == '--jumpbox-username':
