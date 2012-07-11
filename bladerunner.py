@@ -330,6 +330,7 @@ class bladerunner:
 					sshr = srunner.spawn(server, userName, password, shellPrompts, passwordPrompts, usePassword, keyFile, verbose, sshc)
 					if not sshr: self.errorQuit('did not login correctly')
 					results.update(comrunner.runCommands(sshr, server))
+					if timeDelay: time.sleep(timeDelay)
 					srunner.close(sshr, shellPrompts, False)
 				srunner.close(sshc, shellPrompts, True)
 			else:
