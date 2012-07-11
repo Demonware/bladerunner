@@ -303,7 +303,7 @@ class bladerunner:
 			elif opt == '-v' or opt == '--verbose':
 				verbose = True
 		
-		if not command or fileName:
+		if not command and not fileName:
 			try:
 				command = servers.pop(0)
 			except IndexError:
@@ -313,9 +313,9 @@ class bladerunner:
 			userName = getpass.getuser()
 
 		shellPrompts.append('\[%s@.*\]\$' % userName)
-		shellPrompts.append('\[%s@.*\]#' % userName)
+		shellPrompts.append('\[root@.*\]\#')
 		shellPrompts.append('%s@.*:~\$' % userName)
-		shellPrompts.append('%s@.*:~#' % userName)
+		shellPrompts.append('root@.*:~#')
 		passwordPrompts = ['(yes/no)\? ', '%s@.*assword:' % userName, 'assword:', '%s:' % userName]
 		
 		if len(servers) > 1 or len(servers) > 0 and fileName or len(servers) > 0 and command:
@@ -328,18 +328,24 @@ class bladerunner:
 				if not sshc: self.errorQuit('did not log into jumpbox correctly')
 				for server in servers:
 					sshr = srunner.spawn(server, userName, password, shellPrompts, passwordPrompts, usePassword, keyFile, verbose, sshc)
-					if not sshr: self.errorQuit('did not login correctly')
+					if not sshr:
+						results[server] = 'did not login correctly'
+						continue
 					results.update(comrunner.runCommands(sshr, server))
 					if timeDelay: time.sleep(timeDelay)
 					srunner.close(sshr, shellPrompts, False)
+					sshr = None
 				srunner.close(sshc, shellPrompts, True)
 			else:
 				for server in servers: 
 					sshc = srunner.spawn(server, userName, password, shellPrompts, passwordPrompts, usePassword, keyFile, verbose)
-					if not sshc: self.errorQuit('did not login correctly')
+					if not sshc: 
+						results[server] = 'did not login correctly'
+						continue
 					results.update(comrunner.runCommands(sshc, server))
 					if timeDelay: time.sleep(timeDelay)
 					srunner.close(sshc, shellPrompts, True)
+					sshc = None
 			self.printResults(results, jumpBox)
 			sys.exit(0)
 		else:
