@@ -12,18 +12,18 @@ Clustered Command Output.
 Install
 -------
 
-grab the latest version with:
+Get the latest version of bladerunner by issuing:
 
 	git clone https://github.com/a-tal/bladerunner.git
 
-or update by going into the directory and running:
+Or update by going into the directory and running:
 	
 	git pull
 
 The install process is very simple on most distros:
 
 - Install python and python-pexpect.
- ln -s bladerunner/bladerunner.py ~/bin/bladerunner
+- ln -s bladerunner/bladerunner.py ~/bin/bladerunner
 - Run "bladerunner [OPTIONS] [COMMAND] [HOST...]"
 
 Usage Tips
