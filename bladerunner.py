@@ -103,18 +103,18 @@ class commandrunner:
 				formattedOutput += "%s\n" % l
 		return formattedOutput
 
-	def sendCommand(self, sshc, c, silent=False):
+	def sendCommand(self, sshc, c, commandTimeout, silent=False):
 		try:
 			sshc.sendline(c)
 			if self.sudoPassword:
-				sc = sshc.expect(self.shellPrompts + self.passwordPrompts, 20)
+				sc = sshc.expect(self.shellPrompts + self.passwordPrompts, commandTimeout or 20)
 				if self.verbose: sys.stdout.write(sshc.before + sshc.after)
 				if sc >= len(self.shellPrompts) and len(self.sudoPass) > 0:
 					sshc.sendline(self.sudoPass) # sudo password
-					sshc.expect(self.shellPrompts, 20)
+					sshc.expect(self.shellPrompts, commandTimeout or 20)
 					if self.verbose: sys.stdout.write(sshc.before + sshc.after)
 			else:
-				sshc.expect(self.shellPrompts, 20)
+				sshc.expect(self.shellPrompts, commandTimeout or 20)
 				if self.verbose: sys.stdout.write(sshc.before + sshc.after)
 
 			if not silent:
@@ -137,13 +137,13 @@ class commandrunner:
 		
 		# If we're loading commands from a file, do that, otherwise just send the one
 		if not self.commandFile:
-			results[server] = self.sendCommand(sshc, self.command) or 'did not return after issuing the command: %s\n' % self.command
+			results[server] = self.sendCommand(sshc, self.command, self.commandTimeout) or 'did not return after issuing the command: %s\n' % self.command
 		else:
 			multiOutput = ''
 			commands = self.openFile(self.commandFile)
 			for line in commands:
 				line = line.strip(os.linesep)
-				lineOutput = self.sendCommand(sshc, line)
+				lineOutput = self.sendCommand(sshc, line, self.commandTimeout)
 				if lineOutput == False:
 					multiOutput = 'did not return after issuing the command: %s\n' % line
 					break
@@ -164,7 +164,7 @@ class commandrunner:
 		else:
 			return f
 	
-	def __init__(self, cmd='', fileName='', sshKey='', shellPattern='', passPattern='', usePassword=True, password='', secondPassword=False, timed=0, user='', vbose=False):
+	def __init__(self, cmd='', fileName='', sshKey='', shellPattern='', passPattern='', usePassword=True, password='', secondPassword=False, timed=0, user='', cTimeout=False, vbose=False):
 		self.command = cmd
 		self.userName = user
 		self.sendPassword = usePassword
@@ -177,25 +177,27 @@ class commandrunner:
 		self.timeDelay = timed
 		self.passwordPrompts = passPattern
 		self.shellPrompts = shellPattern
+		self.commandTimeout = cTimeout
 		
 class bladerunner:
 	def printHelp(self, verboseHelp=False):
 		sys.stdout.write("Usage: bladerunner [OPTIONS] COMMAND [HOST ...]\n")
 		if verboseHelp == True:
 			sys.stdout.write("Options:\n")
-			sys.stdout.write("  -f <filename>\t\tLoad commands from a file\n")
-			sys.stdout.write("  -h \t\t\tThis help screen\n")
-			sys.stdout.write("  -j <hostname>\t\tUse a jumpbox\n")
-			sys.stdout.write("  -k <keyfile>\t\tUse a non-default ssh key\n")
-			sys.stdout.write("  -m <pattern>\t\tMatch a specific shell prompt\n")
-			sys.stdout.write("  -n \t\t\tNo password prompt\n")
-			sys.stdout.write("  -p <password>\t\tSupply the password on the command line\n")
-			sys.stdout.write("  -P [password]\t\tUse a seperate password for the jumpbox\n")
-			sys.stdout.write("  -s [password]\t\tSecond password\n")
-			sys.stdout.write("  -t <seconds>\t\tAdd a time delay between hosts\n")
-			sys.stdout.write("  -u <username>\t\tUse a different user name to connect\n")
-			sys.stdout.write("  -U <username>\t\tUse a different user name for the jumpbox\n")
-			sys.stdout.write("  -v \t\t\tVerbose output\n")
+			sys.stdout.write("  -f --file=<file>			Load commands from a file\n")
+			sys.stdout.write("  -h --help				This help screen\n")
+			sys.stdout.write("  -j --jumpbox=<host>			Use a jumpbox to intermediary the targets\n")
+			sys.stdout.write("  -k --key=<file>			Use a non-default ssh key\n")
+			sys.stdout.write("  -m --match=<pattern>			Match a specific shell prompt\n")
+			sys.stdout.write("  -n --no-password			No password prompt\n")
+			sys.stdout.write("  -o --command-timeout=<seconds>	Shell timeout between commands (default 20s)\n")
+			sys.stdout.write("  -p --password=<password>		Supply the host password on the command line\n")
+			sys.stdout.write("  -P --jumpbox-password			Use a different password for the jumpbox\n")
+			sys.stdout.write("  -s --second-password			Use a different second password on the host\n")
+			sys.stdout.write("  -t --time-delay=<seconds>		Add a time delay between hosts\n")
+			sys.stdout.write("  -u --username=<username>		Use a different user name to connect\n")
+			sys.stdout.write("  -U --jumpbox-username=<username>	Use a different user name for the jumpbox\n")
+			sys.stdout.write("  -v --verbose				Verbose output\n")
 		sys.exit(0)
 		
 	def errorQuit(self, error=''):
@@ -243,9 +245,10 @@ class bladerunner:
 
 	def mainLogic(self):
 		try:
-			options, servers = getopt.getopt(sys.argv[1:], "c:f:hj:k:m:np:P:st:u:U:v", \
-											["command=", "file=", "help", "jumpbox=", "key=", "match=", "nopassword", "password=", \
-											"jumpbox-password=", "jumpbox-username=", "secondpassword", "timedelay=", "username=", "verbose"])
+			options, servers = getopt.getopt(sys.argv[1:], "c:f:hj:k:m:no:p:P:st:u:U:v", \
+											["command=", "file=", "help", "jumpbox=", "key=", "match=", "no-password", \
+											"password=", "jumpbox-password", "jumpbox-username=", "second-password", \
+											"time-delay=", "username=", "command-timeout=", "verbose"])
 		except:
 			self.printHelp()
 		
@@ -262,14 +265,15 @@ class bladerunner:
 		jumpBox = False
 		jumpboxUser = ''
 		jumpboxPass = ''
+		commandTimeout = False
 				
 		# TODO: error better
 		for opt, arg in options:
 			if opt == '-c' or opt == '--command':
-				if not arg: self.printHelp()
+				if not arg or fileName: self.printHelp()
 				command = arg
 			elif opt == '-f' or opt == '--file':
-				if not arg: self.printHelp()
+				if not arg or command: self.printHelp()
 				fileName = arg
 			elif opt == '-h' or opt == '--help':
 				self.printHelp(True)
@@ -284,13 +288,16 @@ class bladerunner:
 				shellPrompts.insert(0, arg)
 			elif opt == '-n' or opt == '--no-password':
 				usePassword = False
+			elif opt == '-o' or opt == '--command-timeout':
+				if not arg: self.printHelp()
+				commandTimeout = int(arg)
 			elif opt == '-p' or opt == '--password':
 				if not arg: self.printHelp()
 				password = arg
 			elif opt == '-P' or opt == '--jumpbox-password':
-				jumpboxPass = arg or True
+				jumpboxPass = True
 			elif opt == '-s' or opt == '--second-password':
-				secondPassword = arg or True
+				secondPassword = True
 			elif opt == '-t' or opt == '--time-delay':
 				if not arg: self.printHelp()
 				timeDelay = float(arg)
@@ -302,13 +309,13 @@ class bladerunner:
 				jumpboxUser = arg
 			elif opt == '-v' or opt == '--verbose':
 				verbose = True
-		
+
 		if not command and not fileName:
 			try:
 				command = servers.pop(0)
 			except IndexError:
 				self.printHelp()
-		
+
 		if not userName:
 			userName = getpass.getuser()
 
@@ -317,11 +324,11 @@ class bladerunner:
 		shellPrompts.append('%s@.*:~\$' % userName)
 		shellPrompts.append('root@.*:~#')
 		passwordPrompts = ['(yes/no)\? ', '%s@.*assword:' % userName, 'assword:', '%s:' % userName]
-		
+
 		if len(servers) > 1 or len(servers) > 0 and fileName or len(servers) > 0 and command:
 			password, secondPassword, jumpboxPass = self.getPasswords(usePassword, password, secondPassword, jumpboxPass)
 			srunner = sshrunner()
-			comrunner = commandrunner(command, fileName, keyFile, shellPrompts, passwordPrompts, usePassword, password, secondPassword, timeDelay, userName, verbose)
+			comrunner = commandrunner(command, fileName, keyFile, shellPrompts, passwordPrompts, usePassword, password, secondPassword, timeDelay, userName, commandTimeout, verbose)
 			results = {}
 			if jumpBox:
 				sshc = srunner.spawn(jumpBox, jumpboxUser or userName, jumpboxPass, shellPrompts, passwordPrompts, usePassword, keyFile, verbose)
@@ -329,7 +336,7 @@ class bladerunner:
 				for server in servers:
 					sshr = srunner.spawn(server, userName, password, shellPrompts, passwordPrompts, usePassword, keyFile, verbose, sshc)
 					if not sshr:
-						results[server] = 'did not login correctly'
+						results[server] = 'did not login correctly\n'
 						continue
 					results.update(comrunner.runCommands(sshr, server))
 					if timeDelay: time.sleep(timeDelay)
@@ -340,7 +347,7 @@ class bladerunner:
 				for server in servers: 
 					sshc = srunner.spawn(server, userName, password, shellPrompts, passwordPrompts, usePassword, keyFile, verbose)
 					if not sshc: 
-						results[server] = 'did not login correctly'
+						results[server] = 'did not login correctly\n'
 						continue
 					results.update(comrunner.runCommands(sshc, server))
 					if timeDelay: time.sleep(timeDelay)
