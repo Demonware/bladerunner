@@ -462,7 +462,7 @@ class bladerunner:
         parser.add_argument('--time-delay', '-t', dest='timeDelay', metavar="SECONDS", nargs=1, type=float, default=0)
         parser.add_argument('--username', '-u', dest='userName', metavar="USER", nargs=1)
         parser.add_argument('--verbose', '-v', dest='verbose', action='store_true', default=False)
-        parser.add_argument('--version', action='version', version='%(prog)s 2.0 (Released: August 10, 2012)\nCopyright (C) 2012 Adam Talsma <atalsma@demonware.net>\nLicense GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\nThis is free software; you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.')
+        parser.add_argument('--version', action='version', version='%(prog)s 2.0 (Released: August 11, 2012)\nCopyright (C) 2012 Adam Talsma <atalsma@demonware.net>\nLicense GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\nThis is free software; you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.')
         parser.add_argument(dest='command', metavar="COMMAND", nargs='?')
         parser.add_argument(dest='servers', metavar="HOST", nargs=argparse.REMAINDER)
 
