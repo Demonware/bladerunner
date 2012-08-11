@@ -2,12 +2,12 @@ bladerunner
 =================================
 
 bladerunner is a program to send and receive information from any type of ssh enabled text based device.
-It can run through a jumpbox if there are networking restrictions for the execution of the audit. You can 
-also provide an additional password to use for any program after logging in, such as MySQL or sudo. MySQL,
-ftp, and telnet prompts are included as well as the default Ubuntu and CentOS bash shells and password
-prompts. You can provide additional prompts via command line arguments. bladerunner will try to automatically 
-accept SSH certificates and will attempt to break out of any command that exceeds the timeout before returning.
-Commands can be loaded into a file and run line by line from there, per host.
+It can run through a jumpbox if there are networking restrictions. You can also provide an additional password 
+to use for any program after logging in, such as MySQL or sudo. MySQL, ftp, and telnet prompts are included 
+as well as the default Ubuntu and CentOS bash shells and password prompts. You can provide additional prompts 
+via command line arguments. bladerunner will try to automatically accept SSH certificates and will attempt to 
+break out of any command that exceeds the timeout before returning. Commands can be loaded into a file and run 
+line by line from there, per host.
 
 Install
 -------
