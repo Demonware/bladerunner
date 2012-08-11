@@ -37,8 +37,8 @@ You can use the following options with bladerunner:
     -v --verbose                          Verbose output
     --version                             Displays version information
 
-Tip: Using a file with a list of commands in it is an easy way to execute complex 
-tasks on a multitude of remote hosts.
+Tip: Using a file with a list of commands in it is an easy way to execute more complex 
+tasks.
 
 Bugs & TODO
 -----------
