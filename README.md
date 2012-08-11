@@ -1,7 +1,7 @@
 bladerunner
 =================================
 
-bladerunner is a quick way to push changes or run audits across a
+A quick way to push changes or run audits across a
 multitude of devices.
 
 Install
