@@ -19,7 +19,7 @@ A packaged install is coming soon. For now:
 - ln -s bladerunner/bladerunner.py ~/bin/bladerunner
 - Run "bladerunner [OPTIONS] [COMMAND] [HOST...]"
 
-Command Line Arguments
+Options
 ----------
 
 You can use the following options with bladerunner:
