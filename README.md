@@ -13,11 +13,14 @@ from there line by line per host.
 Install
 -------
 
-A packaged install is coming soon. For now:
+If you're on a RPM enabled system, check out the x86_64 RPM in the downloads section. Otherwise grab the source and
+move bladerunner.py into your $PATH somewhere.
 
-- Install python and python-pexpect.
-- ln -s bladerunner/bladerunner.py ~/bin/bladerunner
-- Run "bladerunner [OPTIONS] [COMMAND] [HOST...]"
+Requires
+--------
+
+Python (v2.7), pexpect and python-argparse
+
 
 Options
 ----------
