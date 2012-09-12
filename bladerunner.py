@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 # -*- coding: latin-1 -*-
 
-# bladerunner, written in Python.
+# bladerunner v2.1, written in Python.
 # (c)2012 - Adam Talsma <atalsma@demonware.net>.
 
 # This program is free software: you can redistribute it and/or modify
@@ -23,6 +23,7 @@ import time
 import getpass
 import argparse
 import os
+import re
 import socket
 
 try:
@@ -154,6 +155,9 @@ class commandrunner:
         for l in s[1:-1]: # first line is the command, last line is the return to shell prompt
             l = l.strip(os.linesep)
             l = l.replace('\r', '')
+            l = re.sub('\033\[[0-9;]+m', '', l) # no thanks colors.
+            l = re.sub('\x1b\[[0-9;]+G', '', l) # crazy tab-like thing.
+            l = re.sub('^\s+', '', l) # trailing whitespace
             if not self.commandInLine(command, l):
                 formattedOutput += "%s\n" % l
         return formattedOutput
@@ -180,7 +184,7 @@ class commandrunner:
             if self.settings.verbose: sys.stdout.write(sshc.before + sshc.after)
             if sc >= len(self.settings.shellPrompts) and len(self.settings.secondPassword) > 0:
                 sshc.sendline(self.settings.secondPassword)
-                sshc.expect(self.shellPrompts, self.settings.commandTimeout)
+                sshc.expect(self.settings.shellPrompts, self.settings.commandTimeout)
                 if self.settings.verbose: sys.stdout.write(sshc.before + sshc.after)
         except pexpect.TIMEOUT:
             self.srunner.sendInterrupt(sshc)
@@ -288,7 +292,7 @@ class bladerunner:
         sys.stdout.write("  -j --jumpbox=<host>\t\t\tUse a jumpbox to intermediary the targets\n")
         sys.stdout.write("  -P --jumpbox-password=<password>\tUse a different password for the jumpbox (-P to prompt)\n")
         sys.stdout.write("  -U --jumpbox-username=<username>\tUse a different user name for the jumpbox (default: %s)\n" % getpass.getuser())
-        sys.stdout.write("  -m --match=<pattern>\t\t\tMatch a specific shell prompt\n")
+        sys.stdout.write("  -m --match=<pattern> [pattern] ...\tMatch additional shell prompts (this cannot be the last argument)\n")
         sys.stdout.write("  -n --no-password\t\t\tNo password prompt\n")
         sys.stdout.write("  -r --not-pretty\t\t\tPrint the uglier, old style output\n")
         sys.stdout.write("  -p --password=<password>\t\tSupply the host password on the command line\n")
@@ -450,7 +454,7 @@ class bladerunner:
         parser.add_argument('--jumpbox', '-j', dest='jumpBox', metavar="HOST")
         parser.add_argument('--jumpbox-password', dest='jumpboxPass', metavar="PASSWORD", nargs=1, default=False)
         parser.add_argument('--jumpbox-username', '-U', dest='jumpboxUser', metavar="USER", nargs=1, default=False)
-        parser.add_argument('--match', '-m', dest='matchPattern', metavar="PATTERN", nargs=1)
+        parser.add_argument('--match', '-m', dest='matchPattern', metavar="PATTERN", nargs='+')
         parser.add_argument('--no-password', '-n', dest='usePassword', action='store_false', default=True)
         parser.add_argument('--not-pretty', '-r', dest='printUgly', action='store_true', default=False)
         parser.add_argument('--password', '-p', dest="password", metavar="PASSWORD", nargs=1)
@@ -462,7 +466,7 @@ class bladerunner:
         parser.add_argument('--time-delay', '-t', dest='timeDelay', metavar="SECONDS", nargs=1, type=float, default=0)
         parser.add_argument('--username', '-u', dest='userName', metavar="USER", nargs=1)
         parser.add_argument('--verbose', '-v', dest='verbose', action='store_true', default=False)
-        parser.add_argument('--version', action='version', version='%(prog)s 2.0 (Released: August 11, 2012)\nCopyright (C) 2012 Adam Talsma <atalsma@demonware.net>\nLicense GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\nThis is free software; you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.')
+        parser.add_argument('--version', action='version', version='%(prog)s 2.1 (Released: September 12, 2012)\nCopyright (C) 2012 Adam Talsma <atalsma@demonware.net>\nLicense GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\nThis is free software; you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.')
         parser.add_argument(dest='command', metavar="COMMAND", nargs='?')
         parser.add_argument(dest='servers', metavar="HOST", nargs=argparse.REMAINDER)
 
@@ -488,9 +492,9 @@ class bladerunner:
             settings.passwordPrompts.append('%s:' % settings.jumpboxUser)
 
         if settings.matchPattern:
-            settings.shellPrompts.insert(0, settings.matchPattern[0])
-            settings.passwordPrompts.insert(1, settings.matchPattern[0]) # pos 0 is for logIn()
-
+            for prompt in settings.matchPattern:
+                settings.shellPrompts.insert(0, prompt)
+                settings.passwordPrompts.insert(1, prompt) # pos 0 is for logIn()
         return settings
 
     def getSettings(self):
