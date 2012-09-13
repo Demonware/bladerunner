@@ -13,8 +13,9 @@ from there line by line per host.
 Install
 -------
 
-If you're on a RPM enabled system, check out the x86_64 RPM in the downloads section. Otherwise grab the source and
-move bladerunner.py into your $PATH somewhere.
+There are .rpm and .deb files for your convience in the downloads section. They are signed with the GPG public key 
+in the same place. If package management doesn't work, you could always just grab the source and move 
+bladerunner.py into your $PATH somewhere.
 
 Requires
 --------
