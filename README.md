@@ -36,7 +36,7 @@ You can use the following options with bladerunner:
     -j --jumpbox=<host>                   Use a jumpbox to intermediary the targets
     -P --jumpbox-password=<password>      Use a different password for the jumpbox (-P to prompt)
     -U --jumpbox-username=<username>      Use a different user name for the jumpbox (defaults to your system account)
-    -m --match=<pattern>                  Match a specific shell prompt
+    -m --match=<pattern> [pattern] ...    Match additional shell prompts (this cannot be the last argument)
     -n --no-password                      No password prompt
     -r --not-pretty                       Print the uglier, old style output
     -p --password=<password>              Supply the host password on the command line
