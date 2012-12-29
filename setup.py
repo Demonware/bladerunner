@@ -27,7 +27,7 @@ setup(
         "a shell prompt after every command executed. Several options are "
         "available for custom networking and host setups."
         ),
-    download_url='https://github.com/a-tal/bladerunner/downloads',
+    download_url='https://github.com/a-tal/bladerunner',
     license="BSD",
     classifiers=[
         'Development Status :: 5 - Production/Stable',
