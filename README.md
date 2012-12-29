@@ -15,8 +15,8 @@ Install
 
 Installation is done via the usual methods:
 
-  python setup.py build
-  sudo python setup.py install
+ $  python setup.py build  
+ $  sudo python setup.py install
 
 
 Requires
