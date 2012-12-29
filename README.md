@@ -13,9 +13,11 @@ from there line by line per host.
 Install
 -------
 
-There are .rpm and .deb files for your convience in the downloads section. They are signed with the GPG public key 
-in the same place. If package management doesn't work, you could always just grab the source and move 
-bladerunner.py into your $PATH somewhere.
+Installation is done via the usual methods:
+
+  python setup.py build
+  sudo python setup.py install
+
 
 Requires
 --------
@@ -26,28 +28,12 @@ Python (v2.7), pexpect and python-argparse
 Options
 ----------
 
-You can use the following options with bladerunner:
+For a full list of options use:
 
-    -c --command-timeout=<seconds>        Shell timeout between commands (default: 20s)
-    -T --connection-timeout=<seconds>     Specify the connection timeout (default: 20s)
-    -C --csv                              Output in CSV format, not grouped by similarity
-    -f --file=<file>                      Load commands from a file
-    -h --help                             This help screen
-    -j --jumpbox=<host>                   Use a jumpbox to intermediary the targets
-    -P --jumpbox-password=<password>      Use a different password for the jumpbox (-P to prompt)
-    -U --jumpbox-username=<username>      Use a different user name for the jumpbox (defaults to your system account)
-    -m --match=<pattern> [pattern] ...    Match additional shell prompts (this cannot be the last argument)
-    -n --no-password                      No password prompt
-    -r --not-pretty                       Print the uglier, old style output
-    -p --password=<password>              Supply the host password on the command line
-    -s --second-password=<password>       Use a different second password on the host (-s to prompt)
-    -k --ssh-key=<file>                   Use a non-default ssh key
-    -t --time-delay=<seconds>             Add a time delay between hosts (default: 0s)
-    -u --username=<username>              Use a different user name to connect (defaults to your system account)
-    -v --verbose                          Verbose output
-    --version                             Displays version information
+  bladerunner --help
 
-Tip: Using a file with a list of commands in it is an easy way to execute more complex tasks.
+Using a file with a list of commands in it is an easy way to execute more complex tasks.
+
 
 Bugs & TODO
 -----------
@@ -55,21 +41,36 @@ Bugs & TODO
 If you come across bugs feel free to report them via email or edit [the wiki bug page](https://github.com/a-tal/bladerunner/wiki/Bugs).
 Also see the wiki for the full list of [things to do](https://github.com/a-tal/bladerunner/wiki/Things-to-do).
 
+
 Copyright and License
 ---------------------
 
-bladerunner is copyright 2012 by Adam Talsma <atalsma@demonware.net>.
+bladerunner was written by Adam Talsma <adam@demonware.net>.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Copyright (c) 2012, Activision Publishing, Inc.
+All rights reserved.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see the
-[GNU licenses page](http://www.gnu.org/licenses/).
+* Redistributions of source code must retain the above copyright notice, this list
+of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice, this
+list of conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.
+
+* Neither the name of the Activision Publishing, Inc. nor the names of its
+contributors may be used to endorse or promote products derived from this
+software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
