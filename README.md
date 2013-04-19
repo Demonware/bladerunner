@@ -18,6 +18,7 @@ Installation is done via the usual methods:
  $  python setup.py build  
  $  sudo python setup.py install
 
+Alternatively, you can install via pip or easy_install.
 
 Requires
 --------
@@ -33,6 +34,12 @@ For a full list of options use:
   bladerunner --help
 
 Using a file with a list of commands in it is an easy way to execute more complex tasks.
+
+
+Further Documentation
+---------------------
+
+Sphinx autodocs are available [on pythonhosted](http://pythonhosted.org/Bladerunner/).
 
 
 Bugs & TODO
