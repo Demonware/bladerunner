@@ -56,7 +56,7 @@ from .progressbar import get_term_width
 class Bladerunner:
     """Main logic for the serial execution of commands on hosts.
 
-    Args: Options, a dictionary with the following optional keys::
+    Initialized by a dictionary with the following optional keys::
 
         username: string username, or getpass will guess.
         password: string plain text password, if required.
@@ -314,7 +314,8 @@ class Bladerunner:
     def connect(self, target, username, password):
         """Connects to a server, maybe from another server.
 
-        Args:
+        Args::
+
             target: the hostname, as a string
             username: the user we are connecting as
             password: plain text password to pass
@@ -381,7 +382,8 @@ class Bladerunner:
     def login(self, sshc, password, login_response):
         """Internal method for logging in, used by connect.
 
-        Args:
+        Args::
+
             sshc: the pexpect object
             password: plain text password to send
             login_response: the pexpect return status integer
@@ -459,7 +461,8 @@ class Bladerunner:
     def close(self, sshc, terminate):
         """Closes a connection object.
 
-        Args:
+        Args::
+
             sshc: the pexpect object to close
             terminate: a boolean value to terminate all connections or not
 
@@ -514,7 +517,8 @@ def no_empties(input_list):
 def format_output(output, command):
     """Formatting function to strip colours, remove tabs, etc.
 
-    Args:
+    Args::
+
         output: the pexpect object's before method after issuing the command
         command: the command last issued
 
@@ -579,7 +583,8 @@ def consolidate(results):
 def csv_results(results, options=None):
     """Prints the results consolidated and in a CSV-ish fashion.
 
-    Args:
+    Args::
+
         results: the results dictionary from Bladerunner.run
         options: dictionary with optional keys:
             csv_char: a character or string to separate with
@@ -612,7 +617,8 @@ def csv_results(results, options=None):
 def pretty_results(results, options=None):
     """Prints the results in a relatively pretty way.
 
-    Args:
+    Args::
+
         results: the results dictionary from Bladerunner.run
         options: a dictionary with optional keys.
             style: integer style, from 0-3
@@ -690,7 +696,8 @@ def pretty_results(results, options=None):
 def pretty_header(options):
     """Internal function for printing the header of pretty_results.
 
-    Args:
+    Args::
+
         options: a dictionary with the following keys:
             width: terminal width, already determined in pretty_results
             chars: the character dictionary map, defined in pretty_results
@@ -763,7 +770,8 @@ def pretty_header(options):
 def _pretty_result(result, options, consolidated_results):
     """Internal function, ran inside of a loop to print super fancy results.
 
-    Args:
+    Args::
+
         result: the object iterated over in consolidated_results
         options: the options dictionary from pretty_results
         consolidate_results: the output from consolidate
@@ -895,7 +903,8 @@ def set_shells(options):
 def main_exit(results, options):
     """A buffer for selecting the correct output function and exiting.
 
-    Args:
+    Args::
+
         results: the results dictionary from Bladerunner.run
         options: the options dictionary, uses 'style' key only
     """
