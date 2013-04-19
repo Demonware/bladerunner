@@ -114,7 +114,6 @@ Options:
 -U --jumpbox-username=<username>\tJumpbox user name (default: {username})
 -m --match=<pattern> [pattern] ...\tMatch additional shell prompts
 -n --no-password\t\t\tNo password prompt
--r --not-pretty\t\t\t\tPrint the uglier, old style output
 -p --password=<password>\t\tSupply the host password on the command line
 -s --second-password=<password>\t\tSupply a second password (-s to prompt)
 -S --style=<int>\t\t\tOutput style (0=default, 1=ASCII, 2=double, 3=rounded)
