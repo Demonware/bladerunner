@@ -22,7 +22,7 @@ Installation is done via the usual methods:
 Requires
 --------
 
-Python (v2.7), pexpect and python-argparse
+Python (v2.7), pexpect, python-argparse and [futures 2.1.3](https://pypi.python.org/pypi/futures).
 
 
 Options
@@ -47,7 +47,7 @@ Copyright and License
 
 bladerunner was written by Adam Talsma <adam@demonware.net>.
 
-Copyright (c) 2012, Activision Publishing, Inc.
+Copyright (c) 2013, Activision Publishing, Inc.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,

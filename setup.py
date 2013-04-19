@@ -12,20 +12,21 @@ from distutils.core import setup
 
 setup(
     name='Bladerunner',
-    version='2.6',
+    version='3.0',
     author='Adam Talsma',
     author_email='adam@demonware.net',
     package_dir={'bladerunner': 'src'},
     packages=['bladerunner'],
+    requires=['pexpect', 'futures'],
     scripts=['bin/bladerunner'],
     url='https://github.com/a-tal/bladerunner',
-    description='serial execution of commands on hosts',
+    description='Execution of commands on hosts',
     long_description=(
-        "Bladerunner provides an easy to use interface to quickly audit or push"
-        " changes to a multitude of hosts. It uses pexpect, so pattern matching"
-        " is at its heart (for better and for worse). Be aware of returning to "
-        "a shell prompt after every command executed. Several options are "
-        "available for custom networking and host setups."
+        "Bladerunner provides an easy to use interface to quickly audit or "
+        "push changes to a multitude of hosts. It uses pexpect, so pattern "
+        "matching is at its heart. Be aware of returning to a shell prompt "
+        "after every command executed. Several options are available for "
+        "custom networking and host setups."
         ),
     download_url='https://github.com/a-tal/bladerunner',
     license="BSD",

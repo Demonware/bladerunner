@@ -2,18 +2,18 @@
 
 This file is part of Bladerunner.
 
-Copyright (c) 2012, Activision Publishing, Inc.
+Copyright (c) 2013, Activision Publishing, Inc.
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
 
 * Redistributions of source code must retain the above copyright notice, this
 list of conditions and the following disclaimer.
 
-* Redistributions in binary form must reproduce the above copyright notice, this
-list of conditions and the following disclaimer in the documentation and/or
-other materials provided with the distribution.
+* Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
 
 * Neither the name of the Activision Publishing, Inc. nor the names of its
 contributors may be used to endorse or promote products derived from this
@@ -22,28 +22,28 @@ software without specific prior written permission.
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
-import sys
 import os
+import sys
 import getpass
 import argparse
 
 
-__version__ = "2.6"
-__release_date__ = "December 28, 2012"
+__version__ = "3.0"
+__release_date__ = "April 19, 2013"
 
 
 def cmdline_entry():
-    """Argparse's main entry point, performs logic and preformatting."""
+    """argparse's main entry point, performs logic and preformatting."""
 
     (settings, parser) = setup_argparse(sys.argv[1:])
 
@@ -60,9 +60,9 @@ def cmdline_entry():
 
     settings = get_passwords(argparse_unlisted(settings))
 
-    if settings.ssh_key != None:
+    if settings.ssh_key is not None:
         settings.ssh_key = settings.ssh_key[0]
-    if settings.username != None:
+    if settings.username is not None:
         settings.username = settings.username[0]
     if settings.jump_user:
         settings.jump_user = settings.jump_user[0]
@@ -81,19 +81,21 @@ def cmdline_entry():
 def convert_to_options(settings):
     """Converts argparse's namespace into a dictionary. Removes temp keys."""
 
-    options = dict()
-    options['username'] = settings.username
-    options['jump_user'] = settings.jump_user
-    options['jump_host'] = settings.jump_host
-    options['delay'] = settings.delay
-    options['password'] = settings.password
-    options['second_password'] = settings.second_password
-    options['ssh_key'] = settings.ssh_key
-    options['style'] = settings.style
-    options['width'] = settings.printFixed
-    options['extra_prompts'] = settings.extra_prompts
-    options['progressbar'] = True
-    return options
+    return {
+        "username": settings.username,
+        "jump_user": settings.jump_user,
+        "jump_host": settings.jump_host,
+        "jump_pass": settings.jump_pass,
+        "delay": settings.delay,
+        "password": settings.password,
+        "second_password": settings.second_password,
+        "ssh_key": settings.ssh_key,
+        "style": settings.style,
+        "threads": settings.threads,
+        "width": settings.printFixed,
+        "extra_prompts": settings.extra_prompts,
+        "progressbar": True,
+        }
 
 
 def print_help():
@@ -109,7 +111,7 @@ Options:
 -h --help\t\t\t\tThis help screen
 -j --jumpbox=<host>\t\t\tUse a jumpbox to intermediary the targets
 -P --jumpbox-password=<password>\tSeparate jumpbox password (-P to prompt)
--U --jumpbox-username=<username>\tJumpbox user name (default: %s)
+-U --jumpbox-username=<username>\tJumpbox user name (default: {username})
 -m --match=<pattern> [pattern] ...\tMatch additional shell prompts
 -n --no-password\t\t\tNo password prompt
 -r --not-pretty\t\t\t\tPrint the uglier, old style output
@@ -117,11 +119,12 @@ Options:
 -s --second-password=<password>\t\tSupply a second password (-s to prompt)
 -S --style=<int>\t\t\tOutput style (0=default, 1=ASCII, 2=double, 3=rounded)
 -k --ssh-key=<file>\t\t\tUse a non-default ssh key
+   --threads=<int>\t\t\tMaximum concurrent threads (default: 100)
 -t --time-delay=<seconds>\t\tAdd a time delay between hosts (default: 0s)
--u --username=<username>\t\tUse a different user name to connect (default: %s)
-   --version\t\t\t\tDisplays version information\n""" % (
-        getpass.getuser(),
-        getpass.getuser()
+   --update\t\t\t\tCheck and apply any available updates
+-u --username=<username>\t\tUse a different user name (default: {username})
+   --version\t\t\t\tDisplays version information\n""".format(
+        username=getpass.getuser(),
         ))
 
 
@@ -153,7 +156,7 @@ def get_commands(settings):
 def get_passwords(settings):
     """Prompt and sets all passwords."""
 
-    if settings.usePassword == True and not settings.password:
+    if settings.usePassword is True and not settings.password:
         settings.password = getpass.getpass("Password: ")
 
     if settings.setsecond_password and not settings.second_password:
@@ -190,6 +193,8 @@ def argparse_unlisted(settings):
         settings.csv_char = settings.csv_char[0]
     if settings.ascii:
         settings.style = 1
+    if settings.threads != 100:
+        settings.threads = settings.threads[0]
     return settings
 
 
@@ -197,24 +202,24 @@ def setup_argparse(args):
     """Sets up the parser's arguments."""
 
     parser = argparse.ArgumentParser(
-        prog='bladerunner',
-        description='A simple way to run quick audits or push changes.',
+        prog="bladerunner",
+        description="A simple way to run quick audits or push changes.",
         add_help=False,
         formatter_class=argparse.RawDescriptionHelpFormatter
         )
 
     parser.add_argument(
-        '--ascii',
-        '-a',
-        dest='ascii',
-        action='store_true',
+        "--ascii",
+        "-a",
+        dest="ascii",
+        action="store_true",
         default=False
         )
 
     parser.add_argument(
-        '--command-timeout',
-        '-c',
-        dest='cmd_timeout',
+        "--command-timeout",
+        "-c",
+        dest="cmd_timeout",
         metavar="SECONDS",
         nargs=1,
         type=int,
@@ -222,9 +227,9 @@ def setup_argparse(args):
         )
 
     parser.add_argument(
-        '--connection-timeout',
-        '-T',
-        dest='timeout',
+        "--connection-timeout",
+        "-T",
+        dest="timeout",
         metavar="SECONDS",
         nargs=1,
         type=int,
@@ -232,145 +237,145 @@ def setup_argparse(args):
         )
 
     parser.add_argument(
-        '--csv',
-        '-C',
-        dest='printCSV',
-        action='store_true',
+        "--csv",
+        "-C",
+        dest="printCSV",
+        action="store_true",
         default=False
         )
 
     parser.add_argument(
-        '--csv-separator',
-        dest='csv_char',
+        "--csv-separator",
+        dest="csv_char",
         metavar="CHAR",
         nargs=1,
         type=str,
-        default=','
+        default=","
         )
 
     parser.add_argument(
-        '--file',
-        '-f',
-        dest='command_file',
+        "--file",
+        "-f",
+        dest="command_file",
         metavar="FILE",
         nargs=1,
         default=False
         )
 
     parser.add_argument(
-        '--fixed',
-        dest='printFixed',
-        action='store_true',
+        "--fixed",
+        dest="printFixed",
+        action="store_true",
         default=False,
         help=argparse.SUPPRESS
         )
 
     parser.add_argument(
-        '--help',
-        '-h',
-        dest='getHelp',
-        action='store_true',
+        "--help",
+        "-h",
+        dest="getHelp",
+        action="store_true",
         default=False
         )
 
     parser.add_argument(
-        '--jumpbox',
-        '-j',
-        dest='jump_host',
+        "--jumpbox",
+        "-j",
+        dest="jump_host",
         metavar="HOST"
         )
 
     parser.add_argument(
-        '--jumpbox-password',
-        dest='jump_pass',
+        "--jumpbox-password",
+        dest="jump_pass",
         metavar="PASSWORD",
         nargs=1,
         default=False
         )
 
     parser.add_argument(
-        '--jumpbox-username',
-        '-U',
-        dest='jump_user',
+        "--jumpbox-username",
+        "-U",
+        dest="jump_user",
         metavar="USER",
         nargs=1,
         default=False
         )
 
     parser.add_argument(
-        '--match',
-        '-m',
-        dest='extra_prompts',
+        "--match",
+        "-m",
+        dest="extra_prompts",
         metavar="PATTERN",
-        nargs='+'
+        nargs="+"
         )
 
     parser.add_argument(
-        '--no-password',
-        '-n',
-        dest='usePassword',
-        action='store_false',
+        "--no-password",
+        "-n",
+        dest="usePassword",
+        action="store_false",
         default=True
         )
 
     parser.add_argument(
-        '--password',
-        '-p',
+        "--password",
+        "-p",
         dest="password",
         metavar="PASSWORD",
         nargs=1,
         )
 
     parser.add_argument(
-        '-P',
-        dest='setjumpbox_password',
-        action='store_true',
+        "-P",
+        dest="setjumpbox_password",
+        action="store_true",
         default=False
         )
 
     parser.add_argument(
-        '-s',
-        dest='setsecond_password',
-        action='store_true',
+        "-s",
+        dest="setsecond_password",
+        action="store_true",
         default=False
         )
 
     parser.add_argument(
-        '--second-password',
-        dest='second_password',
+        "--second-password",
+        dest="second_password",
         metavar="PASSWORD",
         nargs=1
         )
 
     parser.add_argument(
-        '--settings',
-        dest='settingsDebug',
-        action='store_true',
+        "--settings",
+        dest="settingsDebug",
+        action="store_true",
         default=False,
         help=argparse.SUPPRESS
         )
 
     parser.add_argument(
-        '--ssh-key',
-        '-k',
-        dest='ssh_key',
+        "--ssh-key",
+        "-k",
+        dest="ssh_key",
         metavar="FILE",
         nargs=1
         )
 
     parser.add_argument(
-        '--style',
-        '-S',
-        dest='style',
+        "--style",
+        "-S",
+        dest="style",
         metavar="INT",
         type=int,
         default=0
         )
 
     parser.add_argument(
-        '--time-delay',
-        '-t',
-        dest='delay',
+        "--time-delay",
+        "-t",
+        dest="delay",
         metavar="SECONDS",
         nargs=1,
         type=float,
@@ -378,30 +383,48 @@ def setup_argparse(args):
         )
 
     parser.add_argument(
-        '--username',
-        '-u',
-        dest='username',
+        "--threads",
+        dest="threads",
+        metavar="INT",
+        nargs=1,
+        type=int,
+        default=100
+        )
+
+    parser.add_argument(
+        "--update",
+        dest="update",
+        action="store_true",
+        default=False,
+        )
+
+    parser.add_argument(
+        "--username",
+        "-u",
+        dest="username",
         metavar="USER",
         nargs=1
         )
 
     parser.add_argument(
-        '--version',
-        action='version',
-        version="Bladerunner %s (Released: %s)" % (
-            __version__,
-            __release_date__,
+        "--version",
+        action="version",
+        version=(
+            "Bladerunner %s (Released: %s)\n"
+            ) % (
+                __version__,
+                __release_date__,
             )
         )
 
     parser.add_argument(
-        dest='command',
+        dest="command",
         metavar="COMMAND",
-        nargs='?'
+        nargs="?"
         )
 
     parser.add_argument(
-        dest='servers',
+        dest="servers",
         metavar="HOST",
         nargs=argparse.REMAINDER
         )

@@ -1,22 +1,22 @@
 #!/usr/bin/env python
-
+#coding: utf-8
 
 """Progress bar and terminal width functions for Bladerunner.
 
 This file is part of Bladerunner.
 
-Copyright (c) 2012, Activision Publishing, Inc.
+Copyright (c) 2013, Activision Publishing, Inc.
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
 
 * Redistributions of source code must retain the above copyright notice, this
 list of conditions and the following disclaimer.
 
-* Redistributions in binary form must reproduce the above copyright notice, this
-list of conditions and the following disclaimer in the documentation and/or
-other materials provided with the distribution.
+* Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
 
 * Neither the name of the Activision Publishing, Inc. nor the names of its
 contributors may be used to endorse or promote products derived from this
@@ -25,19 +25,20 @@ software without specific prior written permission.
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
 from __future__ import division
-import sys
+from __future__ import unicode_literals
 import os
+import sys
 
 
 class ProgressBar:
@@ -46,7 +47,8 @@ class ProgressBar:
     def __init__(self, total_updates, options=None):
         """Initializes the object.
 
-        Args:
+        Args::
+
             total_updates: an integer of how many times update() will be called
             options: a dictionary of additional options. schema:
                 width: an integer for fixed terminal width printing
@@ -62,40 +64,40 @@ class ProgressBar:
 
         self.counter = 0  # update counter
         self.chars = {
-            'left': ['[', '{', ''],
-            'right': [']', '}', ''],
-            'space': [' ', ' ', u'\u2591'],
-            25: ['/', '.', u'\u2592'],
-            50: ['-', '-', u'\u2593'],
-            75: ['\\', '+', u'\u258A'],
-            100: ['=', '*', u'\u2588'],
+            "left": ["[", "{", ""],
+            "right": ["]", "}", ""],
+            "space": [" ", " ", "░"],
+            25: ["/", ".", "▒"],
+            50: ["-", "-", "▓"],
+            75: ["\\", "+", "▊"],
+            100: ["=", "*", "█"],
             }
 
         try:
-            if options['style'] < 0 \
-            or options['style'] >= len(self.chars['left']):
+            if options["style"] < 0 or \
+               options["style"] >= len(self.chars["left"]):
                 self.style = 0
             else:
-                self.style = options['style']
+                self.style = options["style"]
         except (KeyError, TypeError):
             self.style = 0
 
         try:
-            self.show_counters = options['show_counters']
+            self.show_counters = options["show_counters"]
         except (KeyError, TypeError):
             self.show_counters = True
 
         if self.show_counters:
             self.width = self.total_width - (
                 (len(str(self.total)) * 2)
-                + len(self.chars['left'][self.style])
-                + len(self.chars['right'][self.style])
+                + len(self.chars["left"][self.style])
+                + len(self.chars["right"][self.style])
                 + 2  # the space and the slash
                 )
         else:
             self.width = self.total_width - (
-                len(self.chars['left'][self.style])
-                + len(self.chars['right'][self.style])
+                len(self.chars["left"][self.style])
+                + len(self.chars["right"][self.style])
                 )
 
     def setup(self):
@@ -103,18 +105,19 @@ class ProgressBar:
 
         if self.show_counters:
             counter_diff = len(str(self.total)) - len(str(self.counter))
-            sys.stdout.write("%s%s%s %d/%d" % (
-                self.chars['left'][self.style],
-                self.chars['space'][self.style] * (self.width + counter_diff),
-                self.chars['right'][self.style],
-                self.counter,
-                self.total
+            spaces = self.width + counter_diff
+            sys.stdout.write("{left}{space}{right} {count}/{total}".format(
+                left=self.chars["left"][self.style],
+                space=self.chars["space"][self.style] * spaces,
+                right=self.chars["right"][self.style],
+                count=self.counter,
+                total=self.total,
                 ))
         else:
-            sys.stdout.write("%s%s%s" % (
-                self.chars['left'][self.style],
-                self.chars['space'][self.style] * self.width,
-                self.chars['right'][self.style],
+            sys.stdout.write("{left}{space}{right}".format(
+                left=self.chars["left"][self.style],
+                space=self.chars["space"][self.style] * self.width,
+                right=self.chars["right"][self.style],
                 ))
         sys.stdout.flush()
 
@@ -125,9 +128,9 @@ class ProgressBar:
         counter_diff = len(str(self.total)) - len(str(self.counter))
         percent = (self.counter / self.total) * (self.width + counter_diff)
 
-        sys.stdout.write("\r%s%s" % (
-            self.chars['left'][self.style],
-            self.chars[100][self.style] * int(percent),
+        sys.stdout.write("\r{left}{spaces}".format(
+            left=self.chars["left"][self.style],
+            spaces=self.chars[100][self.style] * int(percent),
             ))
 
         try:
@@ -136,37 +139,37 @@ class ProgressBar:
             else:
                 halfchar = self.chars[rounded(percent, 25)][self.style]
         except KeyError:
-            halfchar = ''
+            halfchar = ""
 
         if self.show_counters:
-            sys.stdout.write("%s%s%s %d/%d" % (
-                halfchar,
-                self.chars['space'][self.style] * (
+            sys.stdout.write("{left}{space}{right} {count}/{total}".format(
+                left=halfchar,
+                space=self.chars["space"][self.style] * (
                     self.width
                     + counter_diff
                     - int(percent)
                     - len(halfchar)
                     ),
-                self.chars['right'][self.style],
-                self.counter,
-                self.total
+                right=self.chars["right"][self.style],
+                count=self.counter,
+                total=self.total
                 ))
         else:
-            sys.stdout.write("%s%s%s" % (
-                halfchar,
-                self.chars['space'][self.style] * (
+            sys.stdout.write("{left}{space}{right}".format(
+                left=halfchar,
+                space=self.chars["space"][self.style] * (
                     self.width
                     - int(percent)
                     - len(halfchar)
                     ),
-                self.chars['right'][self.style],
+                right=self.chars["right"][self.style],
                 ))
         sys.stdout.flush()
 
     def clear(self):
         """Clears the progress bar from the screen and resets the cursor."""
 
-        sys.stdout.write("\r%s" % (" " * self.total_width))
+        sys.stdout.write("\r{spaces}".format(spaces=" " * self.total_width))
         sys.stdout.flush()
         sys.stdout.write("\r")
         sys.stdout.flush()
@@ -175,7 +178,8 @@ class ProgressBar:
 def rounded(number, round_to):
     """Internal function for rounding numbers.
 
-    Args:
+    Args::
+
         number: an integer
         round_to: an integer want the number to be rounded towards
 
@@ -206,11 +210,11 @@ def get_term_width():
 
         try:
             termsize = struct.unpack(
-                'hh',
+                "hh",
                 fcntl.ioctl(
                     os_fd,
                     termios.TIOCGWINSZ,
-                    '1234',
+                    "1234",
                     )
                 )
             return termsize
@@ -227,7 +231,7 @@ def get_term_width():
             pass
     if not termsize:
         try:
-            termsize = (env['LINES'], env['COLUMNS'])
+            termsize = (env["LINES"], env["COLUMNS"])
         except (IndexError, KeyError):
             termsize = (25, 80)
     return int(termsize[1])
@@ -236,29 +240,33 @@ def get_term_width():
 def cmd_line_help(name):
     """Overrides argparse's help."""
 
-    sys.exit("""%s -- the simple python progress bar used in Bladerunner.
-Options:
-  -c --count=<int>\tThe number of progress bar updates (default: 10)
-  -d --delay=<seconds>\tThe time in seconds between updates (default: 1)
-  -h --help\t\tDisplay this help message and quit
-     --hide-counters\t\tDo not show the counters with the progress bar
-  -s --style=<int>\tUse an alternate style (default: 0)
-  -w --width=<int>\tThe total width of the progress bar (default: 80)""" % name)
+    sys.exit(
+        "{name} -- the simple python progress bar used in Bladerunner.\n"
+        "Options:\n"
+        "\t-c --count=<int>\tThe number of updates (default: 10)\n"
+        "\t-d --delay=<seconds>\tThe seconds between updates (default: 1)\n"
+        "\t-h --help\t\tDisplay this help message and quit\n"
+        "\t--hide-counters\t\tDo not show the counters with the progress bar\n"
+        "\t-s --style=<int>\tUse an alternate style (default: 0)\n"
+        "\t-w --width=<int>\tThe total width (default: 80)\n".format(
+            name=name,
+            )
+        )
 
 
 def cmd_line_arguments(args):
     """Sets up argparse for the command line demo."""
 
     parser = argparse.ArgumentParser(
-        prog='progressbar',
-        description='progressbar -- a simple python progress bar',
+        prog="progressbar",
+        description="progressbar -- a simple python progress bar",
         add_help=False,
         )
 
     parser.add_argument(
-        '--count',
-        '-c',
-        dest='count',
+        "--count",
+        "-c",
+        dest="count",
         metavar="INT",
         type=int,
         nargs=1,
@@ -266,9 +274,9 @@ def cmd_line_arguments(args):
         )
 
     parser.add_argument(
-        '--delay',
-        '-d',
-        dest='delay',
+        "--delay",
+        "-d",
+        dest="delay",
         metavar="SECONDS",
         type=float,
         nargs=1,
@@ -276,9 +284,9 @@ def cmd_line_arguments(args):
         )
 
     parser.add_argument(
-        '--style',
-        '-s',
-        dest='style',
+        "--style",
+        "-s",
+        dest="style",
         metavar="INT",
         type=int,
         nargs=1,
@@ -286,9 +294,9 @@ def cmd_line_arguments(args):
         )
 
     parser.add_argument(
-        '--width',
-        '-w',
-        dest='width',
+        "--width",
+        "-w",
+        dest="width",
         metavar="INT",
         type=int,
         nargs=1,
@@ -296,24 +304,24 @@ def cmd_line_arguments(args):
         )
 
     parser.add_argument(
-        '--hide-counters',
-        dest='show_counters',
-        action='store_false',
+        "--hide-counters",
+        dest="show_counters",
+        action="store_false",
         default=True,
         )
 
     parser.add_argument(
-        '--help',
-        '-h',
-        dest='helper',
-        action='store_true',
+        "--help",
+        "-h",
+        dest="helper",
+        action="store_true",
         default=False,
         )
 
     options = parser.parse_args(args)
 
     if options.helper:
-        cmd_line_help(sys.argv[0].split('/')[-1])
+        cmd_line_help(sys.argv[0].split("/")[-1])
 
     if options.count != 10:
         options.count = options.count[0]
@@ -340,9 +348,9 @@ if __name__ == "__main__":
     PROGRESSBAR = ProgressBar(
         OPTIONS.count,
         {
-            'style': OPTIONS.style,
-            'width': OPTIONS.width,
-            'show_counters': OPTIONS.show_counters,
+            "style": OPTIONS.style,
+            "width": OPTIONS.width,
+            "show_counters": OPTIONS.show_counters,
         },
         )
     try:
