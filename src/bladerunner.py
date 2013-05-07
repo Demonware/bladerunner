@@ -112,6 +112,11 @@ class Bladerunner:
         except KeyError:
             options["progressbar"] = False
 
+        try:
+            options["threads"]
+        except KeyError:
+            options["threads"] = 100
+
         options = set_shells(options)
 
         self.options = options
