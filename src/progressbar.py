@@ -12,15 +12,15 @@ Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 * Redistributions of source code must retain the above copyright notice, this
-list of conditions and the following disclaimer.
+  list of conditions and the following disclaimer.
 
 * Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-* Neither the name of the Activision Publishing, Inc. nor the names of its
-contributors may be used to endorse or promote products derived from this
-software without specific prior written permission.
+* Neither the name of Activision Publishing, Inc. nor the names of its
+  contributors may be used to endorse or promote products derived from this
+  software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -41,14 +41,13 @@ import os
 import sys
 
 
-class ProgressBar:
+class ProgressBar():
     """A simple textual progress bar."""
 
     def __init__(self, total_updates, options=None):
         """Initializes the object.
 
-        Args::
-
+        Args:
             total_updates: an integer of how many times update() will be called
             options: a dictionary of additional options. schema:
                 width: an integer for fixed terminal width printing
@@ -71,7 +70,7 @@ class ProgressBar:
             50: ["-", "-", "▓"],
             75: ["\\", "+", "▊"],
             100: ["=", "*", "█"],
-            }
+        }
 
         try:
             if options["style"] < 0 or \
@@ -93,12 +92,12 @@ class ProgressBar:
                 + len(self.chars["left"][self.style])
                 + len(self.chars["right"][self.style])
                 + 2  # the space and the slash
-                )
+            )
         else:
             self.width = self.total_width - (
                 len(self.chars["left"][self.style])
                 + len(self.chars["right"][self.style])
-                )
+            )
 
     def setup(self):
         """Prints an empty progress bar to the screen."""
@@ -112,13 +111,13 @@ class ProgressBar:
                 right=self.chars["right"][self.style],
                 count=self.counter,
                 total=self.total,
-                ))
+            ))
         else:
             sys.stdout.write("{left}{space}{right}".format(
                 left=self.chars["left"][self.style],
                 space=self.chars["space"][self.style] * self.width,
                 right=self.chars["right"][self.style],
-                ))
+            ))
         sys.stdout.flush()
 
     def update(self):
@@ -131,7 +130,7 @@ class ProgressBar:
         sys.stdout.write("\r{left}{spaces}".format(
             left=self.chars["left"][self.style],
             spaces=self.chars[100][self.style] * int(percent),
-            ))
+        ))
 
         try:
             if not self.total > self.width * 4:
@@ -149,11 +148,11 @@ class ProgressBar:
                     + counter_diff
                     - int(percent)
                     - len(halfchar)
-                    ),
+                ),
                 right=self.chars["right"][self.style],
                 count=self.counter,
                 total=self.total
-                ))
+            ))
         else:
             sys.stdout.write("{left}{space}{right}".format(
                 left=halfchar,
@@ -161,9 +160,9 @@ class ProgressBar:
                     self.width
                     - int(percent)
                     - len(halfchar)
-                    ),
+                ),
                 right=self.chars["right"][self.style],
-                ))
+            ))
         sys.stdout.flush()
 
     def clear(self):
@@ -178,8 +177,7 @@ class ProgressBar:
 def rounded(number, round_to):
     """Internal function for rounding numbers.
 
-    Args::
-
+    Args:
         number: an integer
         round_to: an integer want the number to be rounded towards
 
@@ -215,8 +213,8 @@ def get_term_width():
                     os_fd,
                     termios.TIOCGWINSZ,
                     "1234",
-                    )
                 )
+            )
             return termsize
         except Exception:
             return None
@@ -250,8 +248,8 @@ def cmd_line_help(name):
         "\t-s --style=<int>\tUse an alternate style (default: 0)\n"
         "\t-w --width=<int>\tThe total width (default: 80)\n".format(
             name=name,
-            )
         )
+    )
 
 
 def cmd_line_arguments(args):
@@ -261,7 +259,7 @@ def cmd_line_arguments(args):
         prog="progressbar",
         description="progressbar -- a simple python progress bar",
         add_help=False,
-        )
+    )
 
     parser.add_argument(
         "--count",
@@ -271,7 +269,7 @@ def cmd_line_arguments(args):
         type=int,
         nargs=1,
         default=10,
-        )
+    )
 
     parser.add_argument(
         "--delay",
@@ -281,7 +279,7 @@ def cmd_line_arguments(args):
         type=float,
         nargs=1,
         default=1,
-        )
+    )
 
     parser.add_argument(
         "--style",
@@ -291,7 +289,7 @@ def cmd_line_arguments(args):
         type=int,
         nargs=1,
         default=0,
-        )
+    )
 
     parser.add_argument(
         "--width",
@@ -301,14 +299,14 @@ def cmd_line_arguments(args):
         type=int,
         nargs=1,
         default=80,
-        )
+    )
 
     parser.add_argument(
         "--hide-counters",
         dest="show_counters",
         action="store_false",
         default=True,
-        )
+    )
 
     parser.add_argument(
         "--help",
@@ -316,7 +314,7 @@ def cmd_line_arguments(args):
         dest="helper",
         action="store_true",
         default=False,
-        )
+    )
 
     options = parser.parse_args(args)
 
@@ -352,12 +350,11 @@ if __name__ == "__main__":
             "width": OPTIONS.width,
             "show_counters": OPTIONS.show_counters,
         },
-        )
+    )
     try:
         for i in range(OPTIONS.count):
             time.sleep(OPTIONS.delay)
             PROGRESSBAR.update()
     except KeyboardInterrupt:
         pass
-    sys.stdout.write('\n')
-    sys.exit(0)
+    raise SystemExit("\n")

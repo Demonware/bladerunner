@@ -9,15 +9,15 @@ Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 * Redistributions of source code must retain the above copyright notice, this
-list of conditions and the following disclaimer.
+  list of conditions and the following disclaimer.
 
 * Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-* Neither the name of the Activision Publishing, Inc. nor the names of its
-contributors may be used to endorse or promote products derived from this
-software without specific prior written permission.
+* Neither the name of Activision Publishing, Inc. nor the names of its
+  contributors may be used to endorse or promote products derived from this
+  software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -38,14 +38,14 @@ import getpass
 import argparse
 
 
-__version__ = "3.0"
-__release_date__ = "April 19, 2013"
+__version__ = "3.4"
+__release_date__ = "July 4, 2013"
 
 
 def cmdline_entry():
     """argparse's main entry point, performs logic and preformatting."""
 
-    (settings, parser) = setup_argparse(sys.argv[1:])
+    settings, parser = setup_argparse(sys.argv[1:])
 
     if settings.getHelp:
         parser.print_usage()
@@ -89,13 +89,14 @@ def convert_to_options(settings):
         "delay": settings.delay,
         "password": settings.password,
         "second_password": settings.second_password,
+        "password_safety": settings.password_safety,
         "ssh_key": settings.ssh_key,
         "style": settings.style,
         "threads": settings.threads,
         "width": settings.printFixed,
         "extra_prompts": settings.extra_prompts,
         "progressbar": True,
-        }
+    }
 
 
 def print_help():
@@ -114,17 +115,17 @@ Options:
 -U --jumpbox-username=<username>\tJumpbox user name (default: {username})
 -m --match=<pattern> [pattern] ...\tMatch additional shell prompts
 -n --no-password\t\t\tNo password prompt
+-N --no-password-check\t\t\tDon't check if the first login succeeded
 -p --password=<password>\t\tSupply the host password on the command line
 -s --second-password=<password>\t\tSupply a second password (-s to prompt)
 -S --style=<int>\t\t\tOutput style (0=default, 1=ASCII, 2=double, 3=rounded)
 -k --ssh-key=<file>\t\t\tUse a non-default ssh key
-   --threads=<int>\t\t\tMaximum concurrent threads (default: 100)
--t --time-delay=<seconds>\t\tAdd a time delay between hosts (default: 0s)
-   --update\t\t\t\tCheck and apply any available updates
+-t --threads=<int>\t\t\tMaximum concurrent threads (default: 100)
+-d --time-delay=<seconds>\t\tAdd a time delay between hosts (default: 0s)
 -u --username=<username>\t\tUse a different user name (default: {username})
    --version\t\t\t\tDisplays version information\n""".format(
         username=getpass.getuser(),
-        ))
+    ))
 
 
 def get_commands(settings):
@@ -135,7 +136,7 @@ def get_commands(settings):
         settings.command = None
 
         try:
-            command_list = list()
+            command_list = []
             with open(settings.command_file[0]) as command_file:
                 for command_line in command_file:
                     command_line = command_line.strip(os.linesep)
@@ -145,7 +146,8 @@ def get_commands(settings):
                         command_list.append(command_line)
             commands = command_list
         except IOError:
-            sys.exit("Could not open file: %s" % settings.command_file[0])
+            raise SystemExit("Could not open file: {}".format(
+                settings.command_file[0]))
     else:
         commands = [settings.command]
 
@@ -193,7 +195,7 @@ def argparse_unlisted(settings):
     if settings.ascii:
         settings.style = 1
     if settings.threads != 100:
-        settings.threads = settings.threads[0]
+        settings.threads = int(settings.threads[0])
     return settings
 
 
@@ -204,16 +206,16 @@ def setup_argparse(args):
         prog="bladerunner",
         description="A simple way to run quick audits or push changes.",
         add_help=False,
-        formatter_class=argparse.RawDescriptionHelpFormatter
-        )
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
 
     parser.add_argument(
         "--ascii",
         "-a",
         dest="ascii",
         action="store_true",
-        default=False
-        )
+        default=False,
+    )
 
     parser.add_argument(
         "--command-timeout",
@@ -222,8 +224,8 @@ def setup_argparse(args):
         metavar="SECONDS",
         nargs=1,
         type=int,
-        default=20
-        )
+        default=20,
+    )
 
     parser.add_argument(
         "--connection-timeout",
@@ -232,16 +234,16 @@ def setup_argparse(args):
         metavar="SECONDS",
         nargs=1,
         type=int,
-        default=20
-        )
+        default=20,
+    )
 
     parser.add_argument(
         "--csv",
         "-C",
         dest="printCSV",
         action="store_true",
-        default=False
-        )
+        default=False,
+    )
 
     parser.add_argument(
         "--csv-separator",
@@ -249,8 +251,8 @@ def setup_argparse(args):
         metavar="CHAR",
         nargs=1,
         type=str,
-        default=","
-        )
+        default=",",
+    )
 
     parser.add_argument(
         "--file",
@@ -258,39 +260,39 @@ def setup_argparse(args):
         dest="command_file",
         metavar="FILE",
         nargs=1,
-        default=False
-        )
+        default=False,
+    )
 
     parser.add_argument(
         "--fixed",
         dest="printFixed",
         action="store_true",
         default=False,
-        help=argparse.SUPPRESS
-        )
+        help=argparse.SUPPRESS,
+    )
 
     parser.add_argument(
         "--help",
         "-h",
         dest="getHelp",
         action="store_true",
-        default=False
-        )
+        default=False,
+    )
 
     parser.add_argument(
         "--jumpbox",
         "-j",
         dest="jump_host",
-        metavar="HOST"
-        )
+        metavar="HOST",
+    )
 
     parser.add_argument(
         "--jumpbox-password",
         dest="jump_pass",
         metavar="PASSWORD",
         nargs=1,
-        default=False
-        )
+        default=False,
+    )
 
     parser.add_argument(
         "--jumpbox-username",
@@ -298,24 +300,24 @@ def setup_argparse(args):
         dest="jump_user",
         metavar="USER",
         nargs=1,
-        default=False
-        )
+        default=False,
+    )
 
     parser.add_argument(
         "--match",
         "-m",
         dest="extra_prompts",
         metavar="PATTERN",
-        nargs="+"
-        )
+        nargs="+",
+    )
 
     parser.add_argument(
         "--no-password",
         "-n",
         dest="usePassword",
         action="store_false",
-        default=True
-        )
+        default=True,
+    )
 
     parser.add_argument(
         "--password",
@@ -323,44 +325,44 @@ def setup_argparse(args):
         dest="password",
         metavar="PASSWORD",
         nargs=1,
-        )
+    )
 
     parser.add_argument(
         "-P",
         dest="setjumpbox_password",
         action="store_true",
-        default=False
-        )
+        default=False,
+    )
 
     parser.add_argument(
         "-s",
         dest="setsecond_password",
         action="store_true",
-        default=False
-        )
+        default=False,
+    )
 
     parser.add_argument(
         "--second-password",
         dest="second_password",
         metavar="PASSWORD",
-        nargs=1
-        )
+        nargs=1,
+    )
 
     parser.add_argument(
         "--settings",
         dest="settingsDebug",
         action="store_true",
         default=False,
-        help=argparse.SUPPRESS
-        )
+        help=argparse.SUPPRESS,
+    )
 
     parser.add_argument(
         "--ssh-key",
         "-k",
         dest="ssh_key",
         metavar="FILE",
-        nargs=1
-        )
+        nargs=1,
+    )
 
     parser.add_argument(
         "--style",
@@ -368,65 +370,65 @@ def setup_argparse(args):
         dest="style",
         metavar="INT",
         type=int,
-        default=0
-        )
+        default=0,
+    )
 
     parser.add_argument(
         "--time-delay",
-        "-t",
+        "-d",
         dest="delay",
         metavar="SECONDS",
         nargs=1,
         type=float,
-        default=0
-        )
+        default=0,
+    )
 
     parser.add_argument(
         "--threads",
+        "-t",
         dest="threads",
         metavar="INT",
         nargs=1,
         type=int,
-        default=100
-        )
-
-    parser.add_argument(
-        "--update",
-        dest="update",
-        action="store_true",
-        default=False,
-        )
+        default=100,
+    )
 
     parser.add_argument(
         "--username",
         "-u",
         dest="username",
         metavar="USER",
-        nargs=1
-        )
+        nargs=1,
+    )
+
+    parser.add_argument(
+        "--no-password-check",
+        "-N",
+        dest="password_safety",
+        action="store_false",
+        default=True,
+    )
 
     parser.add_argument(
         "--version",
         action="version",
-        version=(
-            "Bladerunner %s (Released: %s)\n"
-            ) % (
-                __version__,
-                __release_date__,
-            )
-        )
+        version="Bladerunner {ver} (Released: {date})\n".format(
+            ver=__version__,
+            date=__release_date__,
+        ),
+    )
 
     parser.add_argument(
         dest="command",
         metavar="COMMAND",
-        nargs="?"
-        )
+        nargs="?",
+    )
 
     parser.add_argument(
         dest="servers",
         metavar="HOST",
-        nargs=argparse.REMAINDER
-        )
+        nargs=argparse.REMAINDER,
+    )
 
     settings = parser.parse_args(args)
     return (settings, parser)

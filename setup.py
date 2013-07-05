@@ -8,11 +8,12 @@ Installation instructions:
 
 
 from distutils.core import setup
+from src.cmdline import __version__
 
 
 setup(
-    name='Bladerunner',
-    version='3.0',
+    name='bladerunner',
+    version=__version__,
     author='Adam Talsma',
     author_email='adam@demonware.net',
     package_dir={'bladerunner': 'src'},
@@ -27,7 +28,7 @@ setup(
         "matching is at its heart. Be aware of returning to a shell prompt "
         "after every command executed. Several options are available for "
         "custom networking and host setups."
-        ),
+    ),
     download_url='https://github.com/a-tal/bladerunner',
     license="BSD",
     classifiers=[
@@ -39,5 +40,5 @@ setup(
         'Programming Language :: Python',
         'Topic :: System :: Clustering',
         'Topic :: System :: Systems Administration',
-        ],
-    )
+    ],
+)
