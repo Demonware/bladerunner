@@ -94,7 +94,7 @@ def convert_to_options(settings):
         "style": settings.style,
         "threads": settings.threads,
         "width": settings.printFixed,
-        "extra_prompts": settings.extra_prompts,
+        "extra_prompts": settings.extra_prompts or [],
         "progressbar": True,
     }
 
