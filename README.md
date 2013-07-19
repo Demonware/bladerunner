@@ -39,7 +39,7 @@ Using a file with a list of commands in it is an easy way to execute more comple
 Further Documentation
 ---------------------
 
-Sphinx autodocs are available [on pythonhosted](http://pythonhosted.org/Bladerunner/).
+Sphinx autodocs are available [on pythonhosted](http://pythonhosted.org/bladerunner/).
 
 
 Bugs & TODO
