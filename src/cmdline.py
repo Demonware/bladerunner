@@ -38,8 +38,8 @@ import getpass
 import argparse
 
 
-__version__ = "3.4"
-__release_date__ = "July 4, 2013"
+__version__ = "3.5"
+__release_date__ = "July 25, 2013"
 
 
 def cmdline_entry():
