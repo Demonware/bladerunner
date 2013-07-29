@@ -41,7 +41,7 @@ import os
 import sys
 
 
-class ProgressBar():
+class ProgressBar(object):
     """A simple textual progress bar."""
 
     def __init__(self, total_updates, options=None):
@@ -98,6 +98,8 @@ class ProgressBar():
                 len(self.chars["left"][self.style])
                 + len(self.chars["right"][self.style])
             )
+
+        super(ProgressBar, self).__init__()
 
     def setup(self):
         """Prints an empty progress bar to the screen."""

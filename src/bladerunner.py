@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #coding: utf-8
 
-"""Bladerunner version 3.4. Released July 4, 2013. Written in Python 2.7.
+"""Bladerunner version 3.5. Released July 25, 2013. Written in Python 2.7.
 
 Provides a method of pushing changes or running audits on groups of similar
 hosts over SSH using pexpect (http://pexpect.sourceforge.net). Can be extended
@@ -53,7 +53,7 @@ from .progressbar import ProgressBar
 from .progressbar import get_term_width
 
 
-class Bladerunner():
+class Bladerunner(object):
     """Main logic for the serial execution of commands on hosts.
 
     Initialized by a dictionary with the following optional keys::
@@ -123,6 +123,8 @@ class Bladerunner():
         self.progress = None
         self.sshc = None
         self.commands = None
+
+        super(Bladerunner, self).__init__()
 
     def run(self, commands, servers):
         """Executes commands on servers.
@@ -449,8 +451,7 @@ class Bladerunner():
             except (pexpect.TIMEOUT, pexpect.EOF):
                 return (None, -1)
         else:
-            if self.options["ssh_key"] and \
-               os.path.isfile(self.options["ssh_key"]):
+            if self.options["ssh_key"]:
                 self.sshc.sendline("ssh -ti {key} {user}@{host}".format(
                     key=self.options["ssh_key"],
                     user=username,
@@ -949,11 +950,11 @@ def _pretty_result(result, options, consolidated_results):
                 width
                 - left_len
                 - 17
-                - len(options["jump_host"])
+                - len(options["jump_host"] or "")
             ),
             up=chars["botUp"][options["style"]],
             jumpbox=chars["top"][options["style"]] * (
-                len(options["jump_host"])
+                len(options["jump_host"] or "")
                 + 11
             ),
             right_edge=chars["sideRight"][options["style"]],
