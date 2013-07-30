@@ -938,7 +938,8 @@ def _pretty_result(result, options, consolidated_results):
     else:
         max_length = len(result["names"])
 
-    if consolidated_results.index(result) == 0 and "jump_host" in options:
+    if consolidated_results.index(result) == 0 and "jump_host" in options \
+       and options["jump_host"]:
         # first split has a bottom up character when using a jumpbox
         sys.stdout.write((
             "{left_edge}{left}{middle}{right}{up}{jumpbox}{right_edge}\n"
