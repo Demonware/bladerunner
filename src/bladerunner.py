@@ -156,7 +156,8 @@ class Bladerunner(object):
             (self.sshc, error_code) = self.connect(
                 self.options["jump_host"],
                 jumpuser,
-                self.options["jump_pass"]
+                self.options["jump_pass"],
+                self.options["jump_port"]
             )
             if error_code < 0:
                 message = int(math.fabs(error_code)) - 1
@@ -216,6 +217,7 @@ class Bladerunner(object):
             servers[0],
             self.options["username"],
             self.options["password"],
+            self.options['port'],
         )
         if error_code < 0:
             message = int(math.fabs(error_code)) - 1
@@ -252,6 +254,7 @@ class Bladerunner(object):
             server,
             self.options["username"],
             self.options["password"],
+            self.options['port'],
         )
         if error_code < 0:
             message = int(math.fabs(error_code)) - 1
@@ -406,7 +409,7 @@ class Bladerunner(object):
         results["results"] = command_results
         return results
 
-    def connect(self, target, username, password):
+    def connect(self, target, username, password, port):
         """Connects to a server, maybe from another server.
 
         Args::
@@ -414,6 +417,7 @@ class Bladerunner(object):
             target: the hostname, as a string
             username: the user we are connecting as
             password: plain text password to pass
+            port: ssh port number, as integer
 
         Returns:
             a pexpect object that can be passed back here or to send_commands()
@@ -426,16 +430,22 @@ class Bladerunner(object):
             try:
                 if self.options["ssh_key"] and \
                    os.path.isfile(self.options["ssh_key"]):
-                    sshr = pexpect.spawn("ssh -ti {key} {user}@{host}".format(
-                        key=self.options["ssh_key"],
-                        user=username,
-                        host=target,
-                    ))
+                    sshr = pexpect.spawn(
+                        "ssh -p {portnumber} -ti {key} {user}@{host}".format(
+                            portnumber=port,
+                            key=self.options["ssh_key"],
+                            user=username,
+                            host=target,
+                        )
+                    )
                 else:
-                    sshr = pexpect.spawn("ssh -t {user}@{host}".format(
-                        user=username,
-                        host=target,
-                    ))
+                    sshr = pexpect.spawn(
+                        "ssh -p {portnumber} -t {user}@{host}".format(
+                            portnumber=port,
+                            user=username,
+                            host=target,
+                        )
+                    )
                 login_response = sshr.expect(
                     self.options["passwd_prompts"] +
                     self.options["shell_prompts"] +

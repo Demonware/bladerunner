@@ -86,6 +86,7 @@ def convert_to_options(settings):
         "jump_user": settings.jump_user,
         "jump_host": settings.jump_host,
         "jump_pass": settings.jump_pass,
+        "jump_port": settings.jump_port,
         "delay": settings.delay,
         "password": settings.password,
         "second_password": settings.second_password,
@@ -96,6 +97,7 @@ def convert_to_options(settings):
         "width": settings.printFixed,
         "extra_prompts": settings.extra_prompts or [],
         "progressbar": True,
+        "port": settings.port,
     }
 
 
@@ -196,8 +198,12 @@ def argparse_unlisted(settings):
         settings.style = 1
     if settings.threads != 100:
         settings.threads = int(settings.threads[0])
-    return settings
+    if type(settings.jump_port) == list:
+        settings.jump_port = settings.jump_port[0]
+    if type(settings.port) == list:
+        settings.port = settings.port[0]
 
+    return settings
 
 def setup_argparse(args):
     """Sets up the parser's arguments."""
@@ -207,6 +213,15 @@ def setup_argparse(args):
         description="A simple way to run quick audits or push changes.",
         add_help=False,
         formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument(
+        "--port",
+        dest="port",
+        metavar="PORT",
+        nargs=1,
+        type=int,
+        default=22
     )
 
     parser.add_argument(
@@ -301,6 +316,15 @@ def setup_argparse(args):
         metavar="USER",
         nargs=1,
         default=False,
+    )
+
+    parser.add_argument(
+        "--jump_port",
+        dest="jump_port",
+        metavar="JUMP_PORT",
+        nargs=1,
+        type=int,
+        default=22,
     )
 
     parser.add_argument(
