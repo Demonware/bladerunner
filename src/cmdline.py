@@ -72,7 +72,7 @@ def cmdline_entry():
 
     options = convert_to_options(settings)
 
-    if settings.printCSV:
+    if settings.printCSV or settings.csv_char != ",":
         options['style'] = -1
 
     return commands, settings.servers, options
@@ -93,6 +93,7 @@ def convert_to_options(settings):
         "password_safety": settings.password_safety,
         "ssh_key": settings.ssh_key,
         "style": settings.style,
+        "csv_char": settings.csv_char,
         "threads": settings.threads,
         "width": settings.printFixed,
         "extra_prompts": settings.extra_prompts or [],
@@ -110,22 +111,26 @@ Options:
 -c --command-timeout=<seconds>\t\tShell timeout between commands (default: 20s)
 -T --connection-timeout=<seconds>\tSpecify the SSH timeout (default: 20s)
 -C --csv\t\t\t\tOutput in CSV format, not grouped by similarity
+-E --csv-separator=<char>\t\tSpecify the seperation character with CSV output
 -f --file=<file>\t\t\tLoad commands from a file
+-x --fixed\t\t\t\tUse a fixed 80 character width for output
 -h --help\t\t\t\tThis help screen
 -j --jumpbox=<host>\t\t\tUse a jumpbox to intermediary the targets
 -P --jumpbox-password=<password>\tSeparate jumpbox password (-P to prompt)
+-J --jumpbox-port=<port>\t\tUse a non-standard SSH port for the jumpbox
 -U --jumpbox-username=<username>\tJumpbox user name (default: {username})
 -m --match=<pattern> [pattern] ...\tMatch additional shell prompts
 -n --no-password\t\t\tNo password prompt
 -N --no-password-check\t\t\tDon't check if the first login succeeded
 -p --password=<password>\t\tSupply the host password on the command line
+-D --port\t\t\t\tUse a non non-standard SSH port for the target hosts
 -s --second-password=<password>\t\tSupply a second password (-s to prompt)
 -S --style=<int>\t\t\tOutput style (0=default, 1=ASCII, 2=double, 3=rounded)
 -k --ssh-key=<file>\t\t\tUse a non-default ssh key
 -t --threads=<int>\t\t\tMaximum concurrent threads (default: 100)
 -d --time-delay=<seconds>\t\tAdd a time delay between hosts (default: 0s)
 -u --username=<username>\t\tUse a different user name (default: {username})
-   --version\t\t\t\tDisplays version information\n""".format(
+-v --version\t\t\t\tDisplays version information\n""".format(
         username=getpass.getuser(),
     ))
 
@@ -193,7 +198,7 @@ def argparse_unlisted(settings):
     if settings.jump_pass:
         settings.jump_pass = settings.jump_pass[0]
     if settings.csv_char != ',':
-        settings.csv_char = settings.csv_char[0]
+        settings.csv_char = settings.csv_char[0][0]
     if settings.ascii:
         settings.style = 1
     if settings.threads != 100:
@@ -213,15 +218,6 @@ def setup_argparse(args):
         description="A simple way to run quick audits or push changes.",
         add_help=False,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-
-    parser.add_argument(
-        "--port",
-        dest="port",
-        metavar="PORT",
-        nargs=1,
-        type=int,
-        default=22
     )
 
     parser.add_argument(
@@ -262,6 +258,7 @@ def setup_argparse(args):
 
     parser.add_argument(
         "--csv-separator",
+        "-E",
         dest="csv_char",
         metavar="CHAR",
         nargs=1,
@@ -280,6 +277,7 @@ def setup_argparse(args):
 
     parser.add_argument(
         "--fixed",
+        "-x",
         dest="printFixed",
         action="store_true",
         default=False,
@@ -319,9 +317,10 @@ def setup_argparse(args):
     )
 
     parser.add_argument(
-        "--jump_port",
+        "--jumpbox-port",
+        "-J",
         dest="jump_port",
-        metavar="JUMP_PORT",
+        metavar="PORT",
         nargs=1,
         type=int,
         default=22,
@@ -349,6 +348,16 @@ def setup_argparse(args):
         dest="password",
         metavar="PASSWORD",
         nargs=1,
+    )
+
+    parser.add_argument(
+        "--port",
+        "-D",
+        dest="port",
+        metavar="PORT",
+        nargs=1,
+        type=int,
+        default=22
     )
 
     parser.add_argument(
@@ -435,6 +444,7 @@ def setup_argparse(args):
 
     parser.add_argument(
         "--version",
+        "-v",
         action="version",
         version="Bladerunner {ver} (Released: {date})\n".format(
             ver=__version__,
