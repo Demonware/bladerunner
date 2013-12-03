@@ -20,7 +20,7 @@ setup(
     packages=['bladerunner'],
     requires=['pexpect', 'futures'],
     scripts=['bin/bladerunner'],
-    url='https://github.com/a-tal/bladerunner',
+    url='https://github.com/Demonware/bladerunner',
     description='Execution of commands on hosts',
     long_description=(
         "Bladerunner provides an easy to use interface to quickly audit or "
@@ -29,7 +29,7 @@ setup(
         "after every command executed. Several options are available for "
         "custom networking and host setups."
     ),
-    download_url='https://github.com/a-tal/bladerunner',
+    download_url='https://github.com/Demonware/bladerunner',
     license="BSD",
     classifiers=[
         'Development Status :: 5 - Production/Stable',

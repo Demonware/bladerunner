@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #coding: utf-8
 
-"""Bladerunner version 3.5. Released July 25, 2013. Written in Python 2.7.
+"""Bladerunner version 3.7. Released December 3, 2013. Written in Python 2.7.
 
 Provides a method of pushing changes or running audits on groups of similar
 hosts over SSH using pexpect (http://pexpect.sourceforge.net). Can be extended
@@ -56,25 +56,27 @@ from .progressbar import get_term_width
 class Bladerunner(object):
     """Main logic for the serial execution of commands on hosts.
 
-    Initialized by a dictionary with the following optional keys::
+    Initialized by a dictionary with the following optional keys (defaults)::
 
-        username: string username, or getpass will guess.
-        password: string plain text password, if required.
-        ssh_key: string non-default ssh key file location.
-        delay: integer in seconds to pause between servers.
-        extra_prompts: list of strings of additional expect prompts.
-        width: integer terminal width for output, or it uses all.
-        jump_host: string hostname of intermediary host.
-        jump_user: alternate username for jump_host.
-        jump_password: alternate password for jump_host.
-        second_password: an additional different password for commands.
-        password_safety: check if the first login succeeds first (False).
-        cmd_timeout: integer in seconds to wait for commands (20).
-        timeout: integer in seconds to wait to connect (20).
+        username: string username (None/current user)
+        password: string plain text password, if required (None)
+        ssh_key: string non-default ssh key file location (None)
+        delay: integer in seconds to pause between servers (None)
+        extra_prompts: list of strings of additional expect prompts ([])
+        width: integer terminal width for output, or it uses all (None/guess)
+        jump_host: string hostname of intermediary host (None)
+        jump_user: alternate username for jump_host (None)
+        jump_password: alternate password for jump_host (None)
+        jump_port: SSH port for jump_host (22)
+        second_password: an additional different password for commands (None)
+        password_safety: check if the first login succeeds first (False)
+        port: SSH port for the servers (22)
+        cmd_timeout: integer in seconds to wait for commands (20)
+        timeout: integer in seconds to wait to connect (20)
         threads: integer number of parallel threads to run (100)
-        style: integer for outputting. Between 0-3 are pretty, or CSV.
-        csv_char: string character to use for CSV results.
-        progressbar: boolean to declare if we want a progress display.
+        style: integer for outputting. Between 0-3 are pretty, or CSV (0)
+        csv_char: string character to use for CSV results (",")
+        progressbar: boolean to declare if we want a progress display (False)
     """
 
     def __init__(self, options=None):
@@ -91,8 +93,11 @@ class Bladerunner(object):
             "jump_host": None,
             "jump_password": None,
             "jump_user": None,
+            "jump_port": 22,
+            "output_file": False,
             "password": None,
             "password_safety": False,
+            "port": 22,
             "progressbar": False,
             "second_password": None,
             "ssh_key": None,
@@ -123,16 +128,19 @@ class Bladerunner(object):
         self.progress = None
         self.sshc = None
         self.commands = None
+        self.commands_on_servers = None
 
         super(Bladerunner, self).__init__()
 
-    def run(self, commands, servers):
+    def run(self, commands=None, servers=None, commands_on_servers={}):
         """Executes commands on servers.
 
         Args::
 
             commands: a list of strings of commands to run
             servers: a list of strings of hostnames
+            commands_on_servers: an optional dictionary used when providing
+                                 unique lists of commands per server
 
         Returns:
             a list of dictionaries with two keys: name, and results. results
@@ -145,7 +153,7 @@ class Bladerunner(object):
         if not isinstance(commands, list):
             commands = [commands]
 
-        self.commands = commands
+        servers = self._prep_servers(commands, servers, commands_on_servers)
 
         if self.options["progressbar"]:
             self.progress = ProgressBar(len(servers), self.options)
@@ -157,7 +165,7 @@ class Bladerunner(object):
                 self.options["jump_host"],
                 jumpuser,
                 self.options["jump_pass"],
-                self.options["jump_port"]
+                self.options["jump_port"],
             )
             if error_code < 0:
                 message = int(math.fabs(error_code)) - 1
@@ -176,6 +184,48 @@ class Bladerunner(object):
             self.progress.clear()
 
         return results
+
+    def _prep_servers(self, commands, servers, commands_on_servers={}):
+        """Checks to see if any of the servers passed are CIDR-ish networks.
+
+        Args::
+
+            commands: list of commands to run
+            servers: list of servers to run the commands on
+            commands_on_servers: dictionary mapping commands to servers
+
+        Returns:
+            list of servers to run on, including any expanded networks
+        """
+
+        if commands_on_servers != {}:
+            for server, command_list in commands_on_servers.items():
+                if not isinstance(command_list, list):
+                    command_list = [command_list]
+
+                network_members = ips_in_subnet(server)
+                if network_members:
+                    commands_on_servers.pop(server)
+                    for member in network_members:
+                        commands_on_servers[member] = command_list
+                else:
+                    commands_on_servers[server] = command_list
+
+            expanded_servers = commands_on_servers.keys()
+            commands = None
+        else:
+            expanded_servers = []
+            for server in servers:
+                network_members = ips_in_subnet(server)
+                if network_members:
+                    expanded_servers.extend(network_members)
+                else:
+                    expanded_servers.append(server)
+
+        self.commands = commands
+        self.commands_on_servers = commands_on_servers
+
+        return expanded_servers
 
     def _run_parallel(self, servers):
         """Runs commands on servers in parallel when not using a jumpbox."""
@@ -296,7 +346,7 @@ class Bladerunner(object):
             if cmd_response >= (
                 len(self.options["shell_prompts"]) +
                 len(self.options["extra_prompts"])
-            ) and len(self.options["second_password"]) > 0:
+            ) and len(self.options["second_password"] or "") > 0:
                 server.sendline(self.options["second_password"])
                 server.expect(
                     self.options["shell_prompts"] +
@@ -329,17 +379,21 @@ class Bladerunner(object):
             format_output if it can find a new prompt, or -1 on error
         """
 
-        # guess the shell to be in the last 30 chars of the last line of output
-        new_prompt = _format_line(output.splitlines()[-1][-30:])
+        try:
+            # prompt is usually in the last 30 chars of the last line of output
+            new_prompt = _format_line(output.splitlines()[-1][-30:])
+        except IndexError:
+            # blank last line could cause an IndexError, should send a newline
+            pass
+        else:
+            # escape regex characters
+            replacements = ["\\", "/", ")", "(", "[", "]", "{", "}", " ", "$",
+                            "?", ">", "<", "^", ".", "*"]
+            for char in replacements:
+                new_prompt = new_prompt.replace(char, "\{}".format(char))
 
-        # escape regex characters
-        replacements = ["\\", "/", ")", "(", "[", "]", "{", "}", " ", "$", "?",
-                        ">", "<", "^", ".", "*"]
-        for char in replacements:
-            new_prompt = new_prompt.replace(char, "\{}".format(char))
-
-        if new_prompt and new_prompt not in self.options["shell_prompts"]:
-            self.options["shell_prompts"].append(new_prompt)
+            if new_prompt and new_prompt not in self.options["shell_prompts"]:
+                self.options["shell_prompts"].append(new_prompt)
 
         try:
             server.sendline()
@@ -391,7 +445,13 @@ class Bladerunner(object):
 
         results = {"name": hostname}
         command_results = []
-        for command in self.commands:
+
+        if self.commands_on_servers:
+            commands = self.commands_on_servers[hostname]
+        else:
+            commands = self.commands
+
+        for command in commands:
             command_result = self._send_cmd(command, server)
             if not command_result or command_result == "\n":
                 command_results.append((
@@ -683,17 +743,21 @@ def format_output(output, command):
             if line.find(fraction) > -1:
                 return True
 
-    output = output.split("\r\n")  # TTY connections use CRLF line-endings
+    output = output.splitlines()
     results = []
-    for line in output[1:-1]:
+    for line in output[1:]:  # the first line is the command
         line = _format_line(line)
-        if not cmd_in_line(command, line):
+        if line and not cmd_in_line(command, line):
             results.append(line)
     return "\n".join(results)
 
 
 def _format_line(line):
     """Removes whitespace, weird tabs, etc..."""
+
+    if sys.version_info.major > 2:
+        # output is in bytes in python3+
+        line = str(line, encoding="utf-8")
 
     line = line.strip(os.linesep)  # can't strip new lines enough
     line = line.replace("\r", "")  # no extra carriage returns
@@ -746,22 +810,29 @@ def csv_results(results, options=None):
     else:
         csv_char = ","
 
-    sys.stdout.write("server,command,result\r\n")
+    write("server{csv}command{csv}result\r\n".format(csv=csv_char), options)
     for server in results:
         for command, command_result in server["results"]:
+            server_name = server.get("name")
+            if not server_name:  # catch for consolidated results
+                server_name = " ".join(server.get("names"))
+
             command_result = "\n".join(no_empties(command_result.split("\n")))
-            sys.stdout.write((
-                "{name_quote}{name}{name_quote}{csv}{cmd_quote}{command}"
-                "{cmd_quote}{csv}{res_quote}{result}{res_quote}\r\n"
-            ).format(
-                name_quote='"' * int(" " in server["name"]),
-                name=server['name'],
-                csv=csv_char,
-                cmd_quote='"' * int(" " in command),
-                command=command,
-                res_quote='"' * int(" " in command_result),
-                result=command_result,
-            ))
+            write(
+                (
+                    "{name_quote}{name}{name_quote}{csv}{cmd_quote}{command}"
+                    "{cmd_quote}{csv}{res_quote}{result}{res_quote}\r\n"
+                ).format(
+                    name_quote='"' * int(" " in server_name),
+                    name=server_name,
+                    csv=csv_char,
+                    cmd_quote='"' * int(" " in command),
+                    command=command,
+                    res_quote='"' * int(" " in command_result),
+                    result=command_result,
+                ),
+                options,
+            )
 
 
 def pretty_results(results, options=None):
@@ -834,13 +905,16 @@ def pretty_results(results, options=None):
     for result in results:
         _pretty_result(result, options, results)
 
-    sys.stdout.write("{left_corner}{left}{up}{right}{right_corner}\n".format(
-        left_corner=chars["botLeft"][options["style"]],
-        left=chars["bot"][options["style"]] * (left_len + 2),
-        up=chars["botUp"][options["style"]],
-        right=chars["bot"][options["style"]] * (width - left_len - 5),
-        right_corner=chars["botRight"][options["style"]],
-    ))
+    write(
+        "{left_corner}{left}{up}{right}{right_corner}\n".format(
+            left_corner=chars["botLeft"][options["style"]],
+            left=chars["bot"][options["style"]] * (left_len + 2),
+            up=chars["botUp"][options["style"]],
+            right=chars["bot"][options["style"]] * (width - left_len - 5),
+            right_corner=chars["botRight"][options["style"]],
+        ),
+        options,
+    )
 
 
 def pretty_header(options):
@@ -861,66 +935,72 @@ def pretty_header(options):
         jumphost = None
 
     if jumphost:
-        sys.stdout.write((
-            "{left_corner}{left}{down}{right}{down}{jumpbox}{right_corner}\n"
-        ).format(
-            left_corner=options["chars"]["topLeft"][options["style"]],
-            left=options["chars"]["top"][options["style"]] * (
-                options["left_len"]
-                + 2
+        write(
+            "{l_corner}{left}{down}{right}{down}{jumpbox}{r_corner}\n".format(
+                l_corner=options["chars"]["topLeft"][options["style"]],
+                left=options["chars"]["top"][options["style"]] * (
+                    options["left_len"]
+                    + 2
+                ),
+                down=options["chars"]["topDown"][options["style"]],
+                right=options["chars"]["top"][options["style"]] * (
+                    options["width"]
+                    - options["left_len"]
+                    - 17
+                    - len(jumphost)
+                ),
+                jumpbox=options["chars"]["top"][options["style"]] * (
+                    len(jumphost) + 11
+                ),
+                r_corner=options["chars"]["topRight"][options["style"]],
             ),
-            down=options["chars"]["topDown"][options["style"]],
-            right=options["chars"]["top"][options["style"]] * (
-                options["width"]
-                - options["left_len"]
-                - 17
-                - len(jumphost)
-            ),
-            jumpbox=options["chars"]["top"][options["style"]] * (
-                len(jumphost) + 11
-            ),
-            right_corner=options["chars"]["topRight"][options["style"]],
-        ))
+            options,
+        )
 
-        sys.stdout.write((
-            "{side} Server{left_gap} {side} Result{right_gap} {side} Jumpbox: "
-            "{jumphost} {side}\n"
-        ).format(
-            side=options["chars"]["side"][options["style"]],
-            left_gap=" " * (options["left_len"] - 6),
-            right_gap=" " * (
-                options["width"]
-                - options["left_len"]
-                - 25
-                - len(jumphost)
+        write(
+            (
+                "{side} Server{l_gap} {side} Result{r_gap} {side} Jumpbox: "
+                "{jumphost} {side}\n"
+            ).format(
+                side=options["chars"]["side"][options["style"]],
+                l_gap=" " * (options["left_len"] - 6),
+                r_gap=" " * (
+                    options["width"]
+                    - options["left_len"]
+                    - 25
+                    - len(jumphost)
+                ),
+                jumphost=jumphost,
             ),
-            jumphost=jumphost,
-        ))
+            options,
+        )
     else:
-        sys.stdout.write((
-            "{left_corner}{left}{down}{right}{right_corner}\n"
-        ).format(
-            left_corner=options["chars"]["topLeft"][options["style"]],
-            left=options["chars"]["top"][options["style"]] * (
-                options["left_len"]
-                + 2
+        write(
+            "{l_corner}{left}{down}{right}{r_corner}\n".format(
+                l_corner=options["chars"]["topLeft"][options["style"]],
+                left=options["chars"]["top"][options["style"]] * (
+                    options["left_len"]
+                    + 2
+                ),
+                down=options["chars"]["topDown"][options["style"]],
+                right=options["chars"]["top"][options["style"]] * (
+                    options["width"]
+                    - options["left_len"]
+                    - 5
+                ),
+                r_corner=options["chars"]["topRight"][options["style"]],
             ),
-            down=options["chars"]["topDown"][options["style"]],
-            right=options["chars"]["top"][options["style"]] * (
-                options["width"]
-                - options["left_len"]
-                - 5
-            ),
-            right_corner=options["chars"]["topRight"][options["style"]],
-        ))
+            options,
+        )
 
-        sys.stdout.write((
-            "{side} Server{left_gap} {side} Result{right_gap} {side}\n"
-        ).format(
-            side=options["chars"]["side"][options["style"]],
-            left_gap=" " * (options["left_len"] - 6),
-            right_gap=" " * (options["width"] - options["left_len"] - 13),
-        ))
+        write(
+            "{side} Server{l_gap} {side} Result{r_gap} {side}\n".format(
+                side=options["chars"]["side"][options["style"]],
+                l_gap=" " * (options["left_len"] - 6),
+                r_gap=" " * (options["width"] - options["left_len"] - 13),
+            ),
+            options,
+        )
 
 
 def _pretty_result(result, options, consolidated_results):
@@ -943,7 +1023,7 @@ def _pretty_result(result, options, consolidated_results):
         for command_line in command_split:
             result_lines.append(command_line)
 
-    if len(result_lines) > len(result["names"]):
+    if len(result_lines or "") > len(result["names"]):
         max_length = len(result_lines)
     else:
         max_length = len(result["names"])
@@ -951,68 +1031,82 @@ def _pretty_result(result, options, consolidated_results):
     if consolidated_results.index(result) == 0 and "jump_host" in options \
        and options["jump_host"]:
         # first split has a bottom up character when using a jumpbox
-        sys.stdout.write((
-            "{left_edge}{left}{middle}{right}{up}{jumpbox}{right_edge}\n"
-        ).format(
-            left_edge=chars["sideLeft"][options["style"]],
-            left=chars["top"][options["style"]] * (left_len + 2),
-            middle=chars["middle"][options["style"]],
-            right=chars["top"][options["style"]] * (
-                width
-                - left_len
-                - 17
-                - len(options["jump_host"] or "")
+        write(
+            "{l_edge}{left}{middle}{right}{up}{jumpbox}{r_edge}\n".format(
+                l_edge=chars["sideLeft"][options["style"]],
+                left=chars["top"][options["style"]] * (left_len + 2),
+                middle=chars["middle"][options["style"]],
+                right=chars["top"][options["style"]] * (
+                    width
+                    - left_len
+                    - 17
+                    - len(options["jump_host"] or "")
+                ),
+                up=chars["botUp"][options["style"]],
+                jumpbox=chars["top"][options["style"]] * (
+                    len(options["jump_host"] or "")
+                    + 11
+                ),
+                r_edge=chars["sideRight"][options["style"]],
             ),
-            up=chars["botUp"][options["style"]],
-            jumpbox=chars["top"][options["style"]] * (
-                len(options["jump_host"] or "")
-                + 11
-            ),
-            right_edge=chars["sideRight"][options["style"]],
-        ))
+            options,
+        )
     else:
         # typical horizontal split
-        sys.stdout.write((
-            "{left_side}{left}{middle}{right}{right_side}\n"
-        ).format(
-            left_side=chars["sideLeft"][options["style"]],
-            left=chars["top"][options["style"]] * (left_len + 2),
-            middle=chars["middle"][options["style"]],
-            right=chars["top"][options["style"]] * (width - left_len - 5),
-            right_side=chars["sideRight"][options["style"]],
-        ))
+        write(
+            "{l_side}{left}{middle}{right}{r_side}\n".format(
+                l_side=chars["sideLeft"][options["style"]],
+                left=chars["top"][options["style"]] * (left_len + 2),
+                middle=chars["middle"][options["style"]],
+                right=chars["top"][options["style"]] * (width - left_len - 5),
+                r_side=chars["sideRight"][options["style"]],
+            ),
+            options,
+        )
 
     for command in range(max_length):
         # print server name or whitespace, mid mark, and leading space
         try:
-            sys.stdout.write("{side} {server}{gap} {side} ".format(
-                side=chars["side"][options["style"]],
-                server=result["names"][command],
-                gap=" " * (left_len - len(str(result["names"][command]))),
-            ))
+            write(
+                "{side} {server}{gap} {side} ".format(
+                    side=chars["side"][options["style"]],
+                    server=result["names"][command],
+                    gap=" " * (left_len - len(str(result["names"][command]))),
+                ),
+                options,
+            )
         except IndexError:
-            sys.stdout.write("{side} {gap} {side} ".format(
-                side=chars["side"][options["style"]],
-                gap=" " * left_len,
-            ))
+            write(
+                "{side} {gap} {side} ".format(
+                    side=chars["side"][options["style"]],
+                    gap=" " * left_len,
+                ),
+                options,
+            )
 
         # print result line, or whitespace, and side mark
         try:
-            sys.stdout.write("{result}{gap} {side}\n".format(
-                result=result_lines[command],
-                gap=" " * (
-                    width
-                    - left_len
-                    - 7
-                    - len(str(result_lines[command]))
+            write(
+                "{result}{gap} {side}\n".format(
+                    result=result_lines[command],
+                    gap=" " * (
+                        width
+                        - left_len
+                        - 7
+                        - len(str(result_lines[command]))
+                    ),
+                    side=chars["side"][options["style"]],
                 ),
-                side=chars["side"][options["style"]],
-            ))
+                options,
+            )
         except IndexError:
-            sys.stdout.write("{gap} {side}\n".format(
-                gap=" " * (width - left_len - 7),
-                side=chars["side"][options["style"]],
-            ))
+            write(
+                "{gap} {side}\n".format(
+                    gap=" " * (width - left_len - 7),
+                    side=chars["side"][options["style"]],
+                ),
+                options,
+            )
 
 
 def set_shells(options):
@@ -1051,6 +1145,121 @@ def set_shells(options):
     options["shell_prompts"] = shells
     options["passwd_prompts"] = password_shells
     return options
+
+
+def _quadrant_to_ip(quadrant):
+    """Convert a single binary quadrant to string base 10 integer."""
+
+    return str(int(quadrant, 2))
+
+
+def _quadrant_to_binary(quadrant):
+    """Convert a single quandrant to a binary string."""
+
+    ip_as_int = int(quadrant)
+    if 0 <= ip_as_int <= 255:
+        return bin(ip_as_int)[2:].rjust(8, "0")
+
+
+def _ip_to_binary(ip):
+    """Convert a dotted quad IP address to a binary string representation."""
+
+    full_binary = []
+    for quadrant in ip.split("."):
+        quad_binary = _quadrant_to_binary(quadrant)
+
+        if not quad_binary:
+            return None
+
+        full_binary.append(quad_binary)
+
+    return "{0:b}".format(int("".join(full_binary), 2)).rjust(32, "0")
+
+
+def _binary_to_ip(binary):
+    """Convert an binary IP address to dotted quads."""
+
+    ip_address = []
+    for quadrant in range(0, len(binary), 8):
+        ip_address.append(_quadrant_to_ip(binary[quadrant:quadrant+8]))
+    return ".".join(ip_address)
+
+
+def _subnet_to_binary(subnet):
+    """Convert a CIDR-ish subnet to it's binary representation.
+
+    Args:
+        subnet: string, something like N.N.N.N/NN or N.N.N.N/N.N.N.N
+
+    Returns:
+        a tuple of binary representations, (network, netmask)
+    """
+
+    try:
+        net, mask = subnet.split("/")
+    except ValueError:
+        return None, None
+
+    if not "." in mask:
+        mask = int(mask)
+        if 0 <= mask <= 32:
+            binary_mask = ("1" * mask).ljust(32, "0")
+        else:
+            # invalid mask size, not that a /0 is much safer...
+            return None, None
+    else:
+        binary_mask = _ip_to_binary(mask)
+
+    return _ip_to_binary(net), binary_mask
+
+
+def ips_in_subnet(subnet):
+    """Given a CIDR-ish network address, return all member IPs.
+
+    Args:
+        subnet: string, something like N.N.N.N/NN or N.N.N.N/N.N.N.N
+
+    Returns:
+        list of IPv4 addresses without masks
+    """
+
+    binary_net, binary_mask = _subnet_to_binary(subnet)
+    if binary_mask is None or binary_net is None:
+        return None
+
+    for i in range(32):
+        if binary_mask[i] != "1":
+            subnet_range = int("1" * (32 - i), 2)
+            network_section = binary_net[:i]
+            break
+    else:
+        # catches providing a /32 subnet mask, just return the network as an IP
+        return [_binary_to_ip(binary_net)]
+
+    members = []
+    for ip in range(1, subnet_range):  # skip the network address
+        ip = bin(ip)[2:].rjust(32 - len(network_section), "0")
+        members.append(_binary_to_ip("{}{}".format(network_section, ip)))
+
+    return members
+
+
+def write(string, options):
+    """Writes a line of output to either the output file or stdout.
+
+    Args::
+
+        string: the string to write out
+        options: the options dictionary, uses 'output_file' key only
+    """
+
+    string = string.encode("utf-8")
+
+    if options["output_file"]:
+        with open(options["output_file"], "a") as outputfile:
+            outputfile.write(string)
+    else:
+        sys.stdout.write(string)
 
 
 def main_exit(results, options):

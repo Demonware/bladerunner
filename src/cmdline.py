@@ -38,8 +38,8 @@ import getpass
 import argparse
 
 
-__version__ = "3.5"
-__release_date__ = "July 25, 2013"
+__version__ = "3.7"
+__release_date__ = "December 3, 2013"
 
 
 def cmdline_entry():
@@ -53,6 +53,8 @@ def cmdline_entry():
         sys.exit(0)
 
     commands, settings = get_commands(settings)
+
+    get_servers(settings)
 
     if settings.printFixed and settings.printCSV or not settings.servers:
         parser.print_usage()
@@ -88,6 +90,7 @@ def convert_to_options(settings):
         "jump_pass": settings.jump_pass,
         "jump_port": settings.jump_port,
         "delay": settings.delay,
+        "output_file": settings.output_file,
         "password": settings.password,
         "second_password": settings.second_password,
         "password_safety": settings.password_safety,
@@ -115,6 +118,7 @@ Options:
 -f --file=<file>\t\t\tLoad commands from a file
 -x --fixed\t\t\t\tUse a fixed 80 character width for output
 -h --help\t\t\t\tThis help screen
+-H --host-file=<file>\t\t\tLoad hosts from a file
 -j --jumpbox=<host>\t\t\tUse a jumpbox to intermediary the targets
 -P --jumpbox-password=<password>\tSeparate jumpbox password (-P to prompt)
 -J --jumpbox-port=<port>\t\tUse a non-standard SSH port for the jumpbox
@@ -122,6 +126,7 @@ Options:
 -m --match=<pattern> [pattern] ...\tMatch additional shell prompts
 -n --no-password\t\t\tNo password prompt
 -N --no-password-check\t\t\tDon't check if the first login succeeded
+-o --output-file=<file>\t\t\tAppend the output to a file rather than stdout
 -p --password=<password>\t\tSupply the host password on the command line
 -D --port\t\t\t\tUse a non non-standard SSH port for the target hosts
 -s --second-password=<password>\t\tSupply a second password (-s to prompt)
@@ -159,6 +164,27 @@ def get_commands(settings):
         commands = [settings.command]
 
     return commands, settings
+
+
+def get_servers(settings):
+    """Checks to see if a file has been passed as a list of servers."""
+
+    servers = []
+
+    if settings.host_file and os.path.isfile(settings.host_file[0]):
+        try:
+            with open(settings.host_file[0], "r") as serverfile:
+                for line in serverfile.readlines():
+                    for server in line.split(" "):
+                        if server.strip():
+                            servers.append(server.strip())
+            settings.servers = servers
+        except IOError:
+            raise SystemExit("Could not open file: {}".format(
+                settings.host_file[0]))
+
+    if len(settings.servers) == 0 or not settings.servers[0]:
+        raise SystemExit(print_help())
 
 
 def get_passwords(settings):
@@ -203,12 +229,22 @@ def argparse_unlisted(settings):
         settings.style = 1
     if settings.threads != 100:
         settings.threads = int(settings.threads[0])
-    if type(settings.jump_port) == list:
+    if isinstance(settings.jump_port, list):
         settings.jump_port = settings.jump_port[0]
-    if type(settings.port) == list:
+    if isinstance(settings.port, list):
         settings.port = settings.port[0]
 
+    if settings.output_file:
+        settings.output_file = settings.output_file[0]
+        # "touch" the file, ensures we can write the output before execution
+        try:
+            with open(settings.output_file, "a"):
+                os.utime(settings.output_file, None)
+        except IOError as error:
+            raise SystemExit("Could not open output file: {}".format(error))
+
     return settings
+
 
 def setup_argparse(args):
     """Sets up the parser's arguments."""
@@ -293,6 +329,15 @@ def setup_argparse(args):
     )
 
     parser.add_argument(
+        "--host-file",
+        "-H",
+        dest="host_file",
+        metavar="FILE",
+        nargs=1,
+        default=False,
+    )
+
+    parser.add_argument(
         "--jumpbox",
         "-j",
         dest="jump_host",
@@ -340,6 +385,15 @@ def setup_argparse(args):
         dest="usePassword",
         action="store_false",
         default=True,
+    )
+
+    parser.add_argument(
+        "--output-file",
+        "-o",
+        dest="output_file",
+        metavar="FILE",
+        nargs=1,
+        default=False,
     )
 
     parser.add_argument(
@@ -446,8 +500,9 @@ def setup_argparse(args):
         "--version",
         "-v",
         action="version",
-        version="Bladerunner {ver} (Released: {date})\n".format(
+        version="Bladerunner {ver} on Python {pyv}. Released: {date}\n".format(
             ver=__version__,
+            pyv="{py.major}.{py.minor}.{py.micro}".format(py=sys.version_info),
             date=__release_date__,
         ),
     )

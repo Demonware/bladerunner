@@ -53,6 +53,8 @@ class ProgressBar(object):
                 width: an integer for fixed terminal width printing
                 style: an integer style, between 0-2
                 show_counters: a boolean to declare showing the counters or not
+                left_padding: a string to pad the left side of the bar with
+                right_padding: a string to pad the right side of the bar with
         """
 
         self.total = total_updates
@@ -85,6 +87,16 @@ class ProgressBar(object):
             self.show_counters = options["show_counters"]
         except (KeyError, TypeError):
             self.show_counters = True
+
+        self.chars["left"][self.style] = "{}{}".format(
+            options.get("left_padding", ""),
+            self.chars["left"][self.style],
+        )
+
+        self.chars["right"][self.style] = "{}{}".format(
+            self.chars["right"][self.style],
+            options.get("right_padding", ""),
+        )
 
         if self.show_counters:
             self.width = self.total_width - (
@@ -122,10 +134,10 @@ class ProgressBar(object):
             ))
         sys.stdout.flush()
 
-    def update(self):
-        """Updates self.counter by 1 and prints the new progress bar."""
+    def update(self, increment=1):
+        """Updates self.counter by increment and reprints the progress bar."""
 
-        self.counter += 1
+        self.counter += increment
         counter_diff = len(str(self.total)) - len(str(self.counter))
         percent = (self.counter / self.total) * (self.width + counter_diff)
 
@@ -191,10 +203,7 @@ def rounded(number, round_to):
 
 
 def get_term_width():
-    """Tries to get the current terminal width, returns 80 if it cannot.
-
-    credit for this function: http://stackoverflow.com/a/566752
-    """
+    """Tries to get the current terminal width, returns 80 if it cannot."""
 
     env = os.environ
 
@@ -210,7 +219,7 @@ def get_term_width():
 
         try:
             termsize = struct.unpack(
-                "hh",
+                str("hh"),
                 fcntl.ioctl(
                     os_fd,
                     termios.TIOCGWINSZ,
@@ -240,18 +249,20 @@ def get_term_width():
 def cmd_line_help(name):
     """Overrides argparse's help."""
 
-    sys.exit(
+    raise SystemExit((
         "{name} -- the simple python progress bar used in Bladerunner.\n"
         "Options:\n"
-        "\t-c --count=<int>\tThe number of updates (default: 10)\n"
-        "\t-d --delay=<seconds>\tThe seconds between updates (default: 1)\n"
-        "\t-h --help\t\tDisplay this help message and quit\n"
-        "\t--hide-counters\t\tDo not show the counters with the progress bar\n"
-        "\t-s --style=<int>\tUse an alternate style (default: 0)\n"
-        "\t-w --width=<int>\tThe total width (default: 80)\n".format(
-            name=name,
-        )
-    )
+        "\t-c --count=<int>\t\t\tThe number of updates (default 10)\n"
+        "\t-d --delay=<seconds>\t\t\tThe seconds between updates (default 1)\n"
+        "\t-h --help\t\t\t\tDisplay this help message and quit\n"
+        "\t--hide-counters\t\t\t\tDo not show the counters\n"
+        "\t-l --left-padding=<str>\t\t\tPad the left side of the bar\n"
+        "\t-r --right-padding=<str>\t\tPad the right side of the bar\n"
+        "\t-s --style=<int>\t\t\tUse an alternate style (default 0)\n"
+        "\t-w --width=<int>\t\t\tThe total width (default max term width)"
+    ).format(
+        name=name,
+    ))
 
 
 def cmd_line_arguments(args):
@@ -300,7 +311,27 @@ def cmd_line_arguments(args):
         metavar="INT",
         type=int,
         nargs=1,
-        default=80,
+        default=get_term_width(),
+    )
+
+    parser.add_argument(
+        "--left-padding",
+        "-l",
+        dest="left_padding",
+        metavar="STR",
+        type=str,
+        nargs=1,
+        default="",
+    )
+
+    parser.add_argument(
+        "--right-padding",
+        "-r",
+        dest="right_padding",
+        metavar="STR",
+        type=str,
+        nargs=1,
+        default="",
     )
 
     parser.add_argument(
@@ -323,17 +354,23 @@ def cmd_line_arguments(args):
     if options.helper:
         cmd_line_help(sys.argv[0].split("/")[-1])
 
-    if options.count != 10:
+    if isinstance(options.count, list):
         options.count = options.count[0]
 
-    if options.delay != 1:
+    if isinstance(options.delay, list):
         options.delay = options.delay[0]
 
-    if options.style != 0:
+    if isinstance(options.style, list):
         options.style = options.style[0]
 
-    if options.width != 80:
+    if isinstance(options.width, list):
         options.width = options.width[0]
+
+    if isinstance(options.left_padding, list):
+        options.left_padding = options.left_padding[0]
+
+    if isinstance(options.right_padding, list):
+        options.right_padding = options.right_padding[0]
 
     return options
 
@@ -351,6 +388,8 @@ if __name__ == "__main__":
             "style": OPTIONS.style,
             "width": OPTIONS.width,
             "show_counters": OPTIONS.show_counters,
+            "left_padding": OPTIONS.left_padding,
+            "right_padding": OPTIONS.right_padding,
         },
     )
     try:
@@ -359,4 +398,5 @@ if __name__ == "__main__":
             PROGRESSBAR.update()
     except KeyboardInterrupt:
         pass
-    raise SystemExit("\n")
+    sys.stdout.write("\n")
+    raise SystemExit()
