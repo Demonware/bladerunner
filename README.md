@@ -1,7 +1,7 @@
 bladerunner
 =================================
 
-bladerunner is a program to send and receive information from any type of ssh enabled text based device.
+Bladerunner is a program to send and receive information from any type of ssh enabled text based device.
 It can run through a jumpbox if there are networking restrictions. You can also provide an additional password 
 to use for any program after logging in, such as MySQL or sudo. bladerunner will attempt to use the host password
 for everything unless you specify otherwise, allowing it to default through sudo in simple use cases. MySQL, FTP, 
@@ -9,6 +9,7 @@ and telnet prompts are included as well as the default Ubuntu and CentOS bash sh
 provide an additional prompt via command line arguments. bladerunner will automatically accept SSH certificates and 
 will throw ^C at any command that exceeds the timeout before returning. Commands can be loaded into a file and run 
 from there line by line per host.
+
 
 Install
 -------
@@ -20,10 +21,11 @@ Installation is done via the usual methods:
 
 Alternatively, you can install via pip or easy_install.
 
+
 Requires
 --------
 
-Python (v2.7), pexpect, python-argparse and [futures 2.1.3](https://pypi.python.org/pypi/futures).
+Python (v2.7+), pexpect, python-argparse and [futures 2.1.3](https://pypi.python.org/pypi/futures).
 
 
 Options
@@ -42,11 +44,23 @@ Further Documentation
 Sphinx autodocs are available [on pythonhosted](http://pythonhosted.org/bladerunner/).
 
 
+Python 3
+--------
+
+Bladerunner fully supports Python 3. Please install the latest version of the [pexpect 3.x beta](https://github.com/pexpect/pexpect/releases/) to use Bladerunner with py3.
+
+
+Changelog
+---------
+
+The full changelog from version 3.7 onward is available [on the wiki](https://github.com/Demonware/bladerunner/wiki/Changelog).
+
+
 Bugs & TODO
 -----------
 
-If you come across bugs feel free to report them via email or edit [the wiki bug page](https://github.com/a-tal/bladerunner/wiki/Bugs).
-Also see the wiki for the full list of [things to do](https://github.com/a-tal/bladerunner/wiki/Things-to-do).
+If you come across bugs feel free to report them via email or edit [the wiki bug page](https://github.com/Demonware/bladerunner/wiki/Bugs).
+Also see the wiki for the full list of [things to do](https://github.com/Demonware/bladerunner/wiki/Things-to-do).
 
 
 Copyright and License
