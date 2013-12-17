@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 #coding: utf-8
 
-"""Bladerunner version 3.7. Released December 3, 2013. Written in Python 2.7.
-
-Provides a method of pushing changes or running audits on groups of similar
-hosts over SSH using pexpect (http://pexpect.sourceforge.net). Can be extended
-to utilize an intermediary host in the event of networking restrictions.
+"""Bladerunner provides a method of pushing changes or running audits on groups
+of similar hosts over SSH using pexpect (http://pexpect.sourceforge.net). Can
+be extended to use an intermediary host if there are networking restrictions.
 
 Copyright (c) 2013, Activision Publishing, Inc.
 All rights reserved.
