@@ -743,7 +743,9 @@ def format_output(output, command):
 
     output = output.splitlines()
     results = []
-    for line in output[1:]:  # the first line is the command
+    # the first line is the command, the last is /probably/ the prompt
+    # there can be cases that disobey this though, like exiting without a \n
+    for line in output[1:-1]:
         line = _format_line(line)
         if line and not cmd_in_line(command, line):
             results.append(line)
