@@ -1156,9 +1156,9 @@ def _quadrant_to_ip(quadrant):
 def _quadrant_to_binary(quadrant):
     """Convert a single quandrant to a binary string."""
 
-    ip_as_int = int(quadrant)
+    ip_as_int = int(str(quadrant))
     if 0 <= ip_as_int <= 255:
-        return bin(ip_as_int)[2:].rjust(8, "0")
+        return bin(ip_as_int)[2:].rjust(8, str(0))
 
 
 def _ip_to_binary(ip):
@@ -1173,7 +1173,7 @@ def _ip_to_binary(ip):
 
         full_binary.append(quad_binary)
 
-    return "{0:b}".format(int("".join(full_binary), 2)).rjust(32, "0")
+    return "{0:b}".format(int("".join(full_binary), 2)).rjust(32, str(0))
 
 
 def _binary_to_ip(binary):
@@ -1181,7 +1181,7 @@ def _binary_to_ip(binary):
 
     ip_address = []
     for quadrant in range(0, len(binary), 8):
-        ip_address.append(_quadrant_to_ip(binary[quadrant:quadrant+8]))
+        ip_address.append(_quadrant_to_ip(binary[quadrant:quadrant + 8]))
     return ".".join(ip_address)
 
 
@@ -1237,9 +1237,9 @@ def ips_in_subnet(subnet):
         return [_binary_to_ip(binary_net)]
 
     members = []
-    for ip in range(1, subnet_range):  # skip the network address
-        ip = bin(ip)[2:].rjust(32 - len(network_section), "0")
-        members.append(_binary_to_ip("{}{}".format(network_section, ip)))
+    for ip_ in range(1, subnet_range):  # skip the network address
+        ip_ = bin(ip_)[2:].rjust(32 - len(network_section), str(0))
+        members.append(_binary_to_ip("{}{}".format(network_section, ip_)))
 
     return members
 
