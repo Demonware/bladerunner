@@ -7,7 +7,7 @@ Installation instructions:
 """
 
 
-from distutils.core import setup
+from setuptools import setup
 from src.cmdline import __version__
 
 
