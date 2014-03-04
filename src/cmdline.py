@@ -2,7 +2,7 @@
 
 This file is part of Bladerunner.
 
-Copyright (c) 2013, Activision Publishing, Inc.
+Copyright (c) 2014, Activision Publishing, Inc.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -38,8 +38,8 @@ import getpass
 import argparse
 
 
-__version__ = "3.7.2"
-__release_date__ = "December 17, 2013"
+__version__ = "3.7.3"
+__release_date__ = "March 3, 2014"
 
 
 def cmdline_entry():

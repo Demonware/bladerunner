@@ -18,7 +18,7 @@ setup(
     author_email='adam@demonware.net',
     package_dir={'bladerunner': 'src'},
     packages=['bladerunner'],
-    requires=['pexpect', 'futures'],
+    install_requires=['pexpect', 'futures'],
     scripts=['bin/bladerunner'],
     url='https://github.com/Demonware/bladerunner',
     description='Execution of commands on hosts',

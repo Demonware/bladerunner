@@ -5,7 +5,7 @@
 of similar hosts over SSH using pexpect (http://pexpect.sourceforge.net). Can
 be extended to use an intermediary host if there are networking restrictions.
 
-Copyright (c) 2013, Activision Publishing, Inc.
+Copyright (c) 2014, Activision Publishing, Inc.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -130,7 +130,7 @@ class Bladerunner(object):
 
         super(Bladerunner, self).__init__()
 
-    def run(self, commands=None, servers=None, commands_on_servers={}):
+    def run(self, commands=None, servers=None, commands_on_servers=None):
         """Executes commands on servers.
 
         Args::
@@ -183,7 +183,7 @@ class Bladerunner(object):
 
         return results
 
-    def _prep_servers(self, commands, servers, commands_on_servers={}):
+    def _prep_servers(self, commands, servers, commands_on_servers=None):
         """Checks to see if any of the servers passed are CIDR-ish networks.
 
         Args::
@@ -196,7 +196,7 @@ class Bladerunner(object):
             list of servers to run on, including any expanded networks
         """
 
-        if commands_on_servers != {}:
+        if commands_on_servers is not None:
             for server, command_list in commands_on_servers.items():
                 if not isinstance(command_list, list):
                     command_list = [command_list]
@@ -759,6 +759,16 @@ def _format_line(line):
         # output is in bytes in python3+
         line = str(line, encoding="utf-8")
 
+    for encoding in ["utf-8", "latin-1"]:
+        try:
+            line = line.decode(encoding)
+        except UnicodeDecodeError:
+            pass
+        else:
+            break
+    else:
+        return line  # can't decode this, not sure what to do. pass it back
+
     line = line.strip(os.linesep)  # can't strip new lines enough
     line = line.replace("\r", "")  # no extra carriage returns
     line = re.sub("\033\[[0-9;]+m", "", line)  # no colours
@@ -1093,7 +1103,7 @@ def _pretty_result(result, options, consolidated_results):
                         width
                         - left_len
                         - 7
-                        - len(str(result_lines[command]))
+                        - len(result_lines[command])
                     ),
                     side=chars["side"][options["style"]],
                 ),
@@ -1255,7 +1265,7 @@ def write(string, options):
 
     string = string.encode("utf-8")
 
-    if options["output_file"]:
+    if options.get("output_file"):
         with open(options["output_file"], "a") as outputfile:
             outputfile.write(string)
     else:
