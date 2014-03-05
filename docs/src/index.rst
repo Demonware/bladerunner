@@ -16,7 +16,7 @@ Use of Bladerunner from within Python
 
 It may be useful to run Bladerunner from inside another script. Here's how::
 
-  from bladerunner import bladerunner
+  from bladerunner import Bladerunner, csv_results, pretty_results
 
   def bladerunner_test():
       """A simple test of bladerunner's execution and output formats."""
@@ -50,18 +50,18 @@ It may be useful to run Bladerunner from inside another script. Here's how::
       }
 
       # initialize Bladerunner with the options provided
-      blades = bladerunner.Bladerunner(options)
+      runner = Bladerunner(options)
 
       # execution of commands on hosts, may take a while to return
-      results = blades.run(commands, servers)
+      results = runner.run(commands, servers)
 
       # Prints CSV results
-      bladerunner.csv_results(results)
+      csv_results(results)
 
       # Prints pretty_results using the available styles
       for i in range(4):
           options['style'] = i
-          bladerunner.pretty_results(results, options)
+          pretty_results(results, options)
 
 
 Indices and tables
