@@ -10,14 +10,12 @@ before_install:
   - pip install --upgrade pexpect
   - pip install --upgrade coveralls
   - pip install --upgrade coverage
-  - pip install --upgrade futures
-  - if [[ $TRAVIS_PYTHON_VERSION == '3.3' ]]; then pip install --upgrade sphinx; fi
+  - if [[ $TRAVIS_PYTHON_VERSION != '3.3' || $TRAVIS_PYTHON_VERSION != '3.2' ]]; then pip install --upgrade futures; fi
 
 script: "nosetests --with-coverage --cover-package=bladerunner"
 
 after_success:
   - coveralls
-  - if [[ $TRAVIS_PYTHON_VERSION == '3.3' ]]; then pip install --upgrade bladerunner; cd docs; make html; cd -; python setup.py upload_docs --upload-dir=docs/build/html; fi
 
 notifications:
   irc:
