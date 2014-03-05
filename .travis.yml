@@ -8,6 +8,7 @@ before_install:
   - pip install --upgrade pexpect
   - pip install --upgrade coveralls
   - pip install --upgrade coverage
+  - pip install --upgrade futures
 
 script: "nosetests --with-coverage --cover-package=bladerunner"
 
