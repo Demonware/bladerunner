@@ -1,4 +1,4 @@
-bladerunner [![Coverage Status](https://coveralls.io/repos/a-tal/bladerunner/badge.png?branch=master)](https://coveralls.io/r/a-tal/bladerunner?branch=master)
+bladerunner [![Build Status](https://travis-ci.org/a-tal/bladerunner.png?branch=master)](https://travis-ci.org/a-tal/bladerunner) [![Coverage Status](https://coveralls.io/repos/a-tal/bladerunner/badge.png?branch=master)](https://coveralls.io/r/a-tal/bladerunner?branch=master)
 =================================
 
 Bladerunner is a program to send and receive information from any type of ssh enabled text based device.
