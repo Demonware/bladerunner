@@ -17,7 +17,7 @@ script: "nosetests --with-coverage --cover-package=bladerunner"
 
 after_success:
   - coveralls
-  - if [[ $TRAVIS_PYTHON_VERSION == '3.3' ]]; then cd docs; make html; cd -; python setup.py upload_docs --upload-dir=docs/build/html; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.3' ]]; then pip install --upgrade bladerunner; cd docs; make html; cd -; python setup.py upload_docs --upload-dir=docs/build/html; fi
 
 notifications:
   irc:
