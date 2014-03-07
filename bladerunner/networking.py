@@ -142,6 +142,6 @@ def ips_in_subnet(subnet):
     members = []
     for ip_ in range(1, subnet_range):  # skip the network address
         ip_ = bin(ip_)[2:].rjust(32 - len(network_section), str(0))
-        members.append(_binary_to_ip("{}{}".format(network_section, ip_)))
+        members.append(_binary_to_ip("{0}{1}".format(network_section, ip_)))
 
     return members

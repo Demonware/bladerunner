@@ -68,7 +68,7 @@ class TestFormatting(BladerunnerTest):
 
         command = "super duper secret command"
         fake_output = [
-            "someshell# {}".format(command),
+            "someshell# {0}".format(command),
             "lots of interesting",
             "output n stuff",
             "someshell#",
@@ -86,7 +86,7 @@ class TestFormatting(BladerunnerTest):
             "arguments it spills over into the next line"
         )
         fake_output = [
-            "someshell# {}\n{}".format(command[:50], command[50:]),
+            "someshell# {0}\n{1}".format(command[:50], command[50:]),
             "lots of interesting",
             "output n stuff",
             "someshell#",

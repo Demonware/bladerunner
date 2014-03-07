@@ -12,10 +12,10 @@ class BladerunnerTest(unittest.TestCase):
             setattr(self, "assertIn", self._assertInBackCompat)
         super(BladerunnerTest, self).__init__(*args, **kwargs)
 
-    def _assertInBackCompat(self, first, second):
+    def _assertInBackCompat(self, first, second, msg=None):
         """Backwards compatability to provide assertIn to older unittest."""
 
         return self.assertTrue(
             first in second,
-            "{} not found in {}".format(first, second),
+            msg or "{0} not found in {1}".format(first, second),
         )
