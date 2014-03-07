@@ -6,10 +6,9 @@ from setuptools import setup
 
 setup(
     name='bladerunner',
-    version="3.7.9-alpha1",
+    version="3.9.9-1",
     author='Adam Talsma',
     author_email='adam@demonware.net',
-    # package_dir={'bladerunner': 'src'},
     packages=['bladerunner'],
     install_requires=['pexpect', 'futures'],
     scripts=['bin/bladerunner'],
