@@ -4,8 +4,6 @@ bladerunner
 [![Build Status](https://travis-ci.org/a-tal/bladerunner.png?branch=master)](https://travis-ci.org/a-tal/bladerunner)
 [![Coverage Status](https://coveralls.io/repos/a-tal/bladerunner/badge.png?branch=master)](https://coveralls.io/r/a-tal/bladerunner?branch=master)
 [![Version](https://pypip.in/v/bladerunner/badge.png)](https://pypi.python.org/pypi/bladerunner/)
-[![Stories in Backlog](https://badge.waffle.io/a-tal/bladerunner.png?label=ready&title=Backlog)](https://waffle.io/a-tal/bladerunner)
-[![Stories In Progress](https://badge.waffle.io/a-tal/bladerunner.png?label=ready&title=In+Progress)](https://waffle.io/a-tal/bladerunner)
 [![Downloads this month](https://pypip.in/d/bladerunner/badge.png)](https://pypi.python.org/pypi/bladerunner/)
 
 ==========
@@ -43,7 +41,7 @@ Options
 
 For a full list of options use:
 
-  bladerunner --help
+  `bladerunner --help`
 
 Using a file with a list of commands in it is an easy way to execute more complex tasks.
 
