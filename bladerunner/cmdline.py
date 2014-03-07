@@ -41,7 +41,7 @@ import argparse
 __version__ = "3.7.9-alpha1"
 __release_date__ = "March 6, 2014"
 
-from formatting import pretty_results
+from bladerunner.formatting import pretty_results
 
 
 def cmdline_entry():

@@ -35,7 +35,7 @@ import os
 import re
 import sys
 
-from progressbar import get_term_width
+from bladerunner.progressbar import get_term_width
 
 
 def no_empties(input_list):
