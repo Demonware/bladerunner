@@ -5,8 +5,10 @@ import unittest
 
 from bladerunner.networking import ips_in_subnet, _ip_to_binary, _binary_to_ip
 
+from test.base import BladerunnerTest
 
-class TestSubnetConversion(unittest.TestCase):
+
+class TestSubnetConversion(BladerunnerTest):
     def test_simple_small(self):
         subnet = "10.0.0.0/30"
         should_be = ["10.0.0.1", "10.0.0.2"]

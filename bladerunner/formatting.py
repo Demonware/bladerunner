@@ -88,7 +88,7 @@ def format_output(output, command):
 def format_line(line):
     """Removes whitespace, weird tabs, etc..."""
 
-    if sys.version_info.major > 2:
+    if sys.version_info >= (3, 0):
         # output is in bytes in python3+
         line = str(line, encoding="utf-8")
 
