@@ -70,7 +70,7 @@ It may be useful to run Bladerunner from inside another script. Here's how::
 Threaded Bladerunner
 ====================
 
-As of Bladerunner 3.7.4 it is possible to use the run_threaded() method to call the run() method in new thread. This is especially useful inside of Tornado applications, which may need to be responsive in the main thread during a long running task.
+As of Bladerunner 4.0.0 it is possible to use the run_threaded() method to call the run() method in new thread. This is especially useful inside of Tornado applications, which may need to be responsive in the main thread during a long running task.
 
 It is recommended that you use gen.Task to do this inside of Tornado, but Bladerunner itself simply returns a thread and calls a callback, so it's really up to the implementation as for how the threading is handled. Here's a simple use case for building a non-blocking remote execution function::
 
