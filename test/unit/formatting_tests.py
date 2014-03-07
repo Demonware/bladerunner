@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 import sys
 import unittest
 
-if sys.version_info.major > 3:
+if sys.version_info.major > 2:
     from io import StringIO
 else:
     from StringIO import StringIO
