@@ -25,31 +25,31 @@ It may be useful to run Bladerunner from inside another script. Here's how::
       """A simple test of bladerunner's execution and output formats."""
 
       # pass in lists of strings, commands and hosts will be executed in order
-      servers = ['testserver1.testdomain.com', 'testserver2.testdomain.com']
-      commands = ['uptime', 'mysql', 'show databases;', 'exit;', 'date']
+      servers = ["testserver1.testdomain.com", "testserver2.testdomain.com"]
+      commands = ["uptime", "mysql", "show databases;", "exit;", "date"]
 
       # this is the full options dictionary
       options = {
-          'username': 'joebob',
-          'password': 'hunter7',
-          'ssh_key': None,
-          'delay': None,
-          'extra_prompts': ['core-router1>'],
-          'width': 80,
-          'jump_host': 'core-router1',
-          'jump_user': 'admin',
-          'jump_password': 'cisco',
-          'jump_port': 22,
-          'second_password': 'super-sekrets',
-          'output_file': '/home/joebob/Documents/output.txt',
-          'password_safety': True,
-          'port': 22,
-          'threads': 100,
-          'cmd_timeout': 20,
-          'timeout': 20,
-          'style': 0,
-          'csv_char': ',',
-          'progressbar': True,
+          "username": "joebob",
+          "password": "hunter7",
+          "ssh_key": None,
+          "delay": None,
+          "extra_prompts": ["core-router1>"],
+          "width": 80,
+          "jump_host": "core-router1",
+          "jump_user": "admin",
+          "jump_password": "cisco",
+          "jump_port": 22,
+          "second_password": "super-sekrets",
+          "output_file": "/home/joebob/Documents/output.txt",
+          "password_safety": True,
+          "port": 22,
+          "threads": 100,
+          "cmd_timeout": 20,
+          "timeout": 20,
+          "style": 0,
+          "csv_char": ",",
+          "progressbar": True,
       }
 
       # initialize Bladerunner with the options provided
@@ -63,7 +63,7 @@ It may be useful to run Bladerunner from inside another script. Here's how::
 
       # Prints pretty_results using the available styles
       for i in range(4):
-          options['style'] = i
+          options["style"] = i
           pretty_results(results, options)
 
 
@@ -90,7 +90,8 @@ It is recommended that you use gen.Task to do this inside of Tornado, but Blader
           commands = self.qs_dict.get("commands", [])
           servers = self.qs_dict.get("servers", [])
           if commands and servers:
-              results = yield gen.Task(threaded_commands, commands, servers)
+              options = {"username": "root"}
+              results = yield gen.Task(threaded_commands, options, commands, servers)
               self.write(200, results)
           else:
               self.write(404, "commands or servers not provided in qs_dict")
