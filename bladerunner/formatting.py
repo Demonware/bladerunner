@@ -31,6 +31,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
+from __future__ import print_function
+
 import os
 import re
 import sys
@@ -91,16 +93,17 @@ def format_line(line):
     if sys.version_info >= (3, 0):
         # output is in bytes in python3+
         line = str(line, encoding="utf-8")
-
-    for encoding in ["utf-8", "latin-1"]:
-        try:
-            line = line.decode(encoding)
-        except (UnicodeDecodeError, UnicodeEncodeError):
-            pass
-        else:
-            break
     else:
-        return line  # can't decode this, not sure what to do. pass it back
+        # try to str.decode on the line for python2.x
+        for encoding in ["utf-8", "latin-1"]:
+            try:
+                line = line.decode(encoding)
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                pass
+            else:
+                break
+        else:
+            return line  # can't decode this, not sure what to do. pass it back
 
     line = line.strip(os.linesep)  # can't strip new lines enough
     line = line.replace("\r", "")  # no extra carriage returns
@@ -471,7 +474,7 @@ def write(string, options):
             outputfile.write(string)
     else:
         try:
-            print(string)
+            print(string, end="")
         except UnicodeDecodeError as error:
             if not options.get("output_file"):
                 while True:
