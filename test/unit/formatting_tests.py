@@ -24,26 +24,14 @@ class TestFormatting(BladerunnerTest):
         self._stdout = sys.stdout
         sys.stdout = StringIO()
 
-        if sys.version_info < (3, 0):
-            self.result_set_a = [
-                ("echo 'hello world'", "hello world"),
-                ("cat dog", "cat: dog: No such file or directory"),
-            ]
-
-            self.result_set_b = [
-                ("echo 'hello world'", "hello world"),
-                ("cat cat", "cat: cat: No such file or directory")
-            ]
-        else:
-            self.result_set_a = [
-                ("echo 'hello world'", bytes("hello world", "utf-8")),
-                ("echo 'first thing'", bytes("first thing", "utf-8")),
-            ]
-
-            self.result_set_b = [
-                ("echo 'hello world'", bytes("hello world", "utf-8")),
-                ("echo 'something else'", bytes("something else", "utf-8")),
-            ]
+        self.result_set_a = [
+            ("echo 'hello world'", "hello world"),
+            ("cat dog", "cat: dog: No such file or directory"),
+        ]
+        self.result_set_b = [
+            ("echo 'hello world'", "hello world"),
+            ("cat cat", "cat: cat: No such file or directory")
+        ]
 
         self.fake_results = [
             {"name": "server_a_1", "results": self.result_set_a},
@@ -77,14 +65,13 @@ class TestFormatting(BladerunnerTest):
         """Should remove the first, last, and any line with command in it."""
 
         command = "super duper secret command"
-        fake_output = [
-            "someshell# {0}".format(command),
-            "lots of interesting",
-            "output n stuff",
-            "someshell#",
-        ]
+        fake_output = (
+            "someshell# {0}\nlots of interesting\noutput n stuff\nsomeshell#"
+        ).format(command)
+        if sys.version_info >= (3, 0):
+            fake_output = bytes(fake_output, "utf-8")
         self.assertEqual(
-            formatting.format_output("\n".join(fake_output), command),
+            formatting.format_output(fake_output, command),
             "lots of interesting\noutput n stuff",
         )
 
@@ -95,22 +82,31 @@ class TestFormatting(BladerunnerTest):
             "super secret and long rediculous command that receives so many "
             "arguments it spills over into the next line"
         )
-        fake_output = [
-            "someshell# {0}\n{1}".format(command[:50], command[50:]),
-            "lots of interesting",
-            "output n stuff",
-            "someshell#",
-        ]
+        fake_output = (
+            "someshell# {0}\n{1}\nlots of interesting\noutput n stuff\n"
+            "someshell#"
+        ).format(command[:50], command[50:])
+        if sys.version_info >= (3, 0):
+            fake_output = bytes(fake_output, "utf-8")
         self.assertEqual(
-            formatting.format_output("\n".join(fake_output), command),
+            formatting.format_output(fake_output, command),
             "lots of interesting\noutput n stuff",
         )
 
     def test_unknown_returns_line(self):
         """Let it fail if the shell cant display it if we can't decode."""
 
-        starting = "Everybody loves a 🍔!"
-        self.assertEqual(formatting.format_line(starting), starting)
+        if sys.version_info >= (3, 0):
+            starting = bytes("Everybody loves a 🍔!", "utf-8")
+        else:
+            starting = "Everybody loves a 🍔!"
+
+        output = formatting.format_line(starting)
+        if sys.version_info >= (3, 0):
+            # py3 will correctly decode and return a str vs the bytes input
+            self.assertIn("Everybody loves a", output)
+        else:
+            self.assertEqual(output, starting)
 
     def test_consolidte_results(self):
         """Consolidate should merge matching server result sets."""
