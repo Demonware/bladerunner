@@ -30,7 +30,7 @@ class TestSubnetConversion(BladerunnerTest):
 
     def test_big_network(self):
         starting = "1.2.3.4"
-        members = ips_in_subnet("{}/16".format(starting))
+        members = ips_in_subnet("{0}/16".format(starting))
         self.assertIn(starting, members)
 
     def test_slash_thirtytwo(self):
