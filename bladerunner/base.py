@@ -38,16 +38,12 @@ import math
 import time
 import getpass
 import pexpect
+import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from bladerunner.progressbar import ProgressBar
-from bladerunner.networking import ips_in_subnet, can_resolve
-from bladerunner.formatting import (
-    csv_results,
-    pretty_results,
-    format_output,
-    format_line,
-)
+from bladerunner.networking import can_resolve, ips_in_subnet
+from bladerunner.formatting import format_line, format_output
 
 
 class Bladerunner(object):
@@ -181,6 +177,37 @@ class Bladerunner(object):
             self.progress.clear()
 
         return results
+
+    def _run_thread(self, commands, servers, commands_on_servers, callback):
+        """Wrapper function to execute self.run with a callback."""
+
+        results = self.run(commands, servers, commands_on_servers)
+
+        if callback:
+            callback(results)
+
+    def run_threaded(self, commands=None, servers=None,
+                     commands_on_servers=None, callback=None):
+        """Non-blocking call which creates and starts a thread for self.run().
+
+        Args::
+
+            commands: a list of strings of commands to run
+            servers: a list of strings of hostnames
+            commands_on_servers: an optional dictionary used when providing
+                                 unique lists of commands per server
+            callback: function that will receive results when run is finished
+
+        Returns:
+            the started thread object which is running commands on servers
+        """
+
+        thread = threading.Thread(
+            target=self._run_thread,
+            args=(commands, servers, commands_on_servers, callback),
+        )
+        thread.start()
+        return thread
 
     def _prep_servers(self, commands, servers, commands_on_servers=None):
         """Checks to see if any of the servers passed are CIDR-ish networks.
