@@ -1,6 +1,4 @@
-#!/usr/bin/env python
 #coding: utf-8
-
 """Progress bar and terminal width functions for Bladerunner.
 
 This file is part of Bladerunner.

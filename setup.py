@@ -1,22 +1,15 @@
-"""Bladerunner's (very simple) setup.py.
-
-Installation instructions:
-
-    $ python setup.py build
-    $ sudo python setup.py install
-"""
+"""Bladerunner's setup.py."""
 
 
 from setuptools import setup
-from src.cmdline import __version__
 
 
 setup(
     name='bladerunner',
-    version=__version__,
+    version="3.7.9-alpha1",
     author='Adam Talsma',
     author_email='adam@demonware.net',
-    package_dir={'bladerunner': 'src'},
+    # package_dir={'bladerunner': 'src'},
     packages=['bladerunner'],
     install_requires=['pexpect', 'futures'],
     scripts=['bin/bladerunner'],

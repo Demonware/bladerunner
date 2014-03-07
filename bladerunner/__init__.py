@@ -30,11 +30,4 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
-from .cmdline import cmdline_entry
-from .progressbar import ProgressBar
-from .progressbar import get_term_width
-from .bladerunner import Bladerunner
-from .bladerunner import main_exit
-from .bladerunner import consolidate
-from .bladerunner import pretty_results
-from .bladerunner import csv_results
+from base import Bladerunner

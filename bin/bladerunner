@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-
-
 """Script executable entry point for Bladerunner.
 
 This file is part of Bladerunner.
@@ -35,14 +33,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
-import bladerunner
+from bladerunner.base import Bladerunner
+from bladerunner.cmdline import cmdline_entry, cmdline_exit
+
+
+def main():
+    """Main run loop, except KeyboardInterrupts."""
+    try:
+        COMMANDS, SERVERS, OPTIONS = cmdline_entry()
+        BLADERUNNER = Bladerunner(OPTIONS)
+        RESULTS = BLADERUNNER.run(COMMANDS, SERVERS)
+        cmdline_exit(RESULTS, OPTIONS)
+    except KeyboardInterrupt:
+        raise SystemExit("interrupted")
 
 
 if __name__ == '__main__':
-    try:
-        COMMANDS, SERVERS, OPTIONS = bladerunner.cmdline_entry()
-        BLADERUNNER = bladerunner.Bladerunner(OPTIONS)
-        RESULTS = BLADERUNNER.run(COMMANDS, SERVERS)
-        bladerunner.main_exit(RESULTS, OPTIONS)
-    except KeyboardInterrupt:
-        raise SystemExit("interrupted")
+    main()
