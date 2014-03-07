@@ -24,16 +24,26 @@ class TestFormatting(BladerunnerTest):
         self._stdout = sys.stdout
         sys.stdout = StringIO()
 
-        self.result_set_a = [
-            ("echo 'hello world'", "hello world"),
-            ("uptime", "00:22:07 up 497 days,  6:30, 11 users,  load average: "
-                       "0.00, 0.00, 0.00"),  # whatup.
-        ]
+        if sys.version_info < (3, 0):
+            self.result_set_a = [
+                ("echo 'hello world'", "hello world"),
+                ("cat dog", "cat: dog: No such file or directory"),
+            ]
 
-        self.result_set_b = [
-            ("echo 'hello world'", "hello world"),
-            ("cat cat", "cat: cat: No such file or directory")
-        ]
+            self.result_set_b = [
+                ("echo 'hello world'", "hello world"),
+                ("cat cat", "cat: cat: No such file or directory")
+            ]
+        else:
+            self.result_set_a = [
+                ("echo 'hello world'", bytes("hello world", "utf-8")),
+                ("echo 'first thing'", bytes("first thing", "utf-8")),
+            ]
+
+            self.result_set_b = [
+                ("echo 'hello world'", bytes("hello world", "utf-8")),
+                ("echo 'something else'", bytes("something else", "utf-8")),
+            ]
 
         self.fake_results = [
             {"name": "server_a_1", "results": self.result_set_a},
