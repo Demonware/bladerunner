@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(
     name='bladerunner',
-    version="3.9.9-1",
+    version="3.9.9-2",
     author='Adam Talsma',
     author_email='adam@demonware.net',
     packages=['bladerunner'],
