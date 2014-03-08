@@ -8,7 +8,12 @@ if sys.version_info <= (2, 7):
 else:
     import unittest
 
-from bladerunner.networking import ips_in_subnet, _ip_to_binary, _binary_to_ip
+from bladerunner.networking import (
+    can_resolve,
+    ips_in_subnet,
+    _ip_to_binary,
+    _binary_to_ip,
+)
 
 
 class TestSubnetConversion(unittest.TestCase):
@@ -66,6 +71,9 @@ class TestSubnetConversion(unittest.TestCase):
         starting = "10.9.8.0/34"
         self.assertEqual(ips_in_subnet(starting), None)
 
+    def test_can_resolve(self):
+        self.assertTrue(can_resolve("google.com"))
+        self.assertFalse(can_resolve("googly.boogly.doodley-do.1234abcd"))
 
 if __name__ == "__main__":
     unittest.main()
