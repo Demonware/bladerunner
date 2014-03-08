@@ -55,7 +55,7 @@ class ThreadingTests(unittest.TestCase):
                                 "error logging in. are ssh keys setup?",
                             )
 
-    @unittest.skipIf(not can_resolve(HOST), "Couldn't resolve {}".format(HOST))
+    @unittest.skipIf(not can_resolve(HOST), "Can't resolve {0}".format(HOST))
     def test_get_run_thread(self):
         """confirm that the run_threaded method returns instantly."""
 
@@ -69,7 +69,7 @@ class ThreadingTests(unittest.TestCase):
         self.assertTrue(time.time() - start_time < 2)
         thread.join()
 
-    @unittest.skipIf(not can_resolve(HOST), "Couldn't resolve {}".format(HOST))
+    @unittest.skipIf(not can_resolve(HOST), "Can't resolve {0}".format(HOST))
     @gen.engine
     def test_use_with_callback(self, callback=None):
         """use the thread in a gen.Task."""
@@ -82,7 +82,7 @@ class ThreadingTests(unittest.TestCase):
         )
         self._parse_results(results)
 
-    @unittest.skipIf(not can_resolve(HOST), "Couldn't resolve {}".format(HOST))
+    @unittest.skipIf(not can_resolve(HOST), "Can't resolve {0}".format(HOST))
     def test_unknown_host_errors(self):
         """test logging into an unknown host results in an error."""
 
