@@ -9,17 +9,21 @@ If HOST does not resolve, all tests will be skipped
 """
 
 
+
+import sys
 import time
-import unittest
 from tornado import gen
+
+if sys.version_info <= (2, 6):
+    import unittest2 as unittest
+else:
+    import unittest
 
 from bladerunner.base import Bladerunner
 from bladerunner.networking import can_resolve
 
-from test.base import BladerunnerTest
 
-
-class ThreadingTests(BladerunnerTest):
+class ThreadingTests(unittest.TestCase):
     HOST = "some_test_host_you_have_root_access_on"
     USER_NAME = "root"
 

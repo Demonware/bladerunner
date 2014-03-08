@@ -5,7 +5,11 @@
 from __future__ import unicode_literals
 
 import sys
-import unittest
+
+if sys.version_info <= (2, 6):
+    import unittest2 as unittest
+else:
+    import unittest
 
 if sys.version_info >= (3, 0):
     from io import StringIO
@@ -14,10 +18,8 @@ else:
 
 from bladerunner import formatting
 
-from test.base import BladerunnerTest
 
-
-class TestFormatting(BladerunnerTest):
+class TestFormatting(unittest.TestCase):
     def setUp(self):
         """Set up a StringIO capture on sys.stdout and a dummy result set."""
 

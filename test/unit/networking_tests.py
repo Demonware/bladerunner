@@ -1,14 +1,17 @@
 """Some unit tests for Bladerunner's network utilities."""
 
 
-import unittest
+import sys
+
+if sys.version_info <= (2, 6):
+    import unittest2 as unittest
+else:
+    import unittest
 
 from bladerunner.networking import ips_in_subnet, _ip_to_binary, _binary_to_ip
 
-from test.base import BladerunnerTest
 
-
-class TestSubnetConversion(BladerunnerTest):
+class TestSubnetConversion(unittest.TestCase):
     def test_simple_small(self):
         subnet = "10.0.0.0/30"
         should_be = ["10.0.0.1", "10.0.0.2"]
