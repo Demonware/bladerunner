@@ -22,6 +22,8 @@ setup(
         "custom networking and host setups."
     ),
     download_url='https://github.com/Demonware/bladerunner',
+    tests_require=['nose', 'tornado'],
+    test_suite='nose.collector',
     license="BSD",
     classifiers=[
         'Development Status :: 5 - Production/Stable',
