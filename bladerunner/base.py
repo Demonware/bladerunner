@@ -500,7 +500,7 @@ class Bladerunner(object):
 
             target: the hostname, as a string
             username: the user we are connecting as
-            password: plain text password to pass
+            password: list or string plain text password(s) to try
             port: ssh port number, as integer
 
         Returns:
@@ -539,9 +539,9 @@ class Bladerunner(object):
 
                 if self.options["jump_host"]:
                     self.sshc = sshr
-                    return self.login(self.sshc, password, login_response)
+                    return self._multipass(self.sshc, password, login_response)
                 else:
-                    return self.login(sshr, password, login_response)
+                    return self._multipass(sshr, password, login_response)
             except (pexpect.TIMEOUT, pexpect.EOF):
                 return (None, -1)
         else:
@@ -572,7 +572,32 @@ class Bladerunner(object):
                 self.send_interrupt(self.sshc)
                 return (None, -4)
 
-            return self.login(self.sshc, password, login_response)
+            return self._multipass(self.sshc, password, login_response)
+
+    def _multipass(self, sshc, passwords, login_response):
+        """Buffer to use multiple passwords if using a list of passwords.
+
+        Args::
+
+            sshc: the pexpect object
+            passwords: list or string of passwords to try
+            login_response: the pexpect return status integer
+
+        Returns:
+            a tuple of the pexpect object and error code, tries to be positive
+        """
+
+        if not hasattr(passwords, "__iter__"):
+            passwords = [passwords]
+
+        error_code = -1
+        for password in passwords:
+            sshc_returned, error_code = self.login(sshc, password,
+                login_response)
+            if sshc_returned and error_code > 0:
+                return (sshc_returned, error_code)
+        else:
+            return (None, error_code)
 
     def login(self, sshc, password, login_response):
         """Internal method for logging in, used by connect.
