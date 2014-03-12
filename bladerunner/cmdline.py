@@ -38,8 +38,8 @@ import getpass
 import argparse
 
 
-__version__ = "3.9.9-2"
-__release_date__ = "March 7, 2014"
+__version__ = "3.9.9-3"
+__release_date__ = "March 11, 2014"
 
 from bladerunner.formatting import pretty_results
 
