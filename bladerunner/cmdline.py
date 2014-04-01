@@ -37,9 +37,8 @@ import sys
 import getpass
 import argparse
 
-
-__version__ = "3.7.3"
-__release_date__ = "March 3, 2014"
+from bladerunner import __version__, __release_date__
+from bladerunner.formatting import csv_results, pretty_results
 
 
 def cmdline_entry():
@@ -78,6 +77,25 @@ def cmdline_entry():
         options['style'] = -1
 
     return commands, settings.servers, options
+
+
+def cmdline_exit(results, options):
+    """A buffer for selecting the correct output function and exiting.
+
+    Args::
+
+        results: the results dictionary from Bladerunner.run
+        options: the options dictionary, uses 'style' key only
+    """
+
+    if options["style"] < 0 or options["style"] > 3:
+        csv_results(results, options)
+    else:
+        try:
+            pretty_results(results, options)
+        except UnicodeEncodeError:
+            csv_results(results, options)
+    raise SystemExit
 
 
 def convert_to_options(settings):

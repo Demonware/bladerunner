@@ -1,13 +1,13 @@
 bladerunner
-=================================
+===========
 
 Bladerunner is a program to send and receive information from any type of ssh enabled text based device.
-It can run through a jumpbox if there are networking restrictions. You can also provide an additional password 
+It can run through a jumpbox if there are networking restrictions. You can also provide an additional password
 to use for any program after logging in, such as MySQL or sudo. bladerunner will attempt to use the host password
-for everything unless you specify otherwise, allowing it to default through sudo in simple use cases. MySQL, FTP, 
-and telnet prompts are included as well as the default Ubuntu and CentOS bash shells and password prompts. You can 
-provide an additional prompt via command line arguments. bladerunner will automatically accept SSH certificates and 
-will throw ^C at any command that exceeds the timeout before returning. Commands can be loaded into a file and run 
+for everything unless you specify otherwise, allowing it to default through sudo in simple use cases. MySQL, FTP,
+and telnet prompts are included as well as the default Ubuntu and CentOS bash shells and password prompts. You can
+provide an additional prompt via command line arguments. bladerunner will automatically accept SSH certificates and
+will throw ^C at any command that exceeds the timeout before returning. Commands can be loaded into a file and run
 from there line by line per host.
 
 
@@ -16,8 +16,8 @@ Install
 
 Installation is done via the usual methods:
 
- $  python setup.py build  
- $  sudo python setup.py install
+ `$  python setup.py build`  
+ `$  sudo python setup.py install`
 
 Alternatively, you can install via pip or easy_install.
 
@@ -33,7 +33,7 @@ Options
 
 For a full list of options use:
 
-  bladerunner --help
+  `bladerunner --help`
 
 Using a file with a list of commands in it is an easy way to execute more complex tasks.
 

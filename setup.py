@@ -1,27 +1,19 @@
-"""Bladerunner's (very simple) setup.py.
-
-Installation instructions:
-
-    $ python setup.py build
-    $ sudo python setup.py install
-"""
+"""Bladerunner's setup.py."""
 
 
 from setuptools import setup
-from src.cmdline import __version__
 
 
 setup(
-    name='bladerunner',
-    version=__version__,
-    author='Adam Talsma',
-    author_email='adam@demonware.net',
-    package_dir={'bladerunner': 'src'},
-    packages=['bladerunner'],
-    install_requires=['pexpect', 'futures'],
-    scripts=['bin/bladerunner'],
-    url='https://github.com/Demonware/bladerunner',
-    description='Execution of commands on hosts',
+    name="bladerunner",
+    version="4.0.0",
+    author="Adam Talsma",
+    author_email="adam@demonware.net",
+    packages=["bladerunner"],
+    install_requires=["pexpect", "futures"],
+    scripts=["bin/bladerunner"],
+    url="https://github.com/Demonware/bladerunner",
+    description="Execution of commands on hosts",
     long_description=(
         "Bladerunner provides an easy to use interface to quickly audit or "
         "push changes to a multitude of hosts. It uses pexpect, so pattern "
@@ -29,16 +21,18 @@ setup(
         "after every command executed. Several options are available for "
         "custom networking and host setups."
     ),
-    download_url='https://github.com/Demonware/bladerunner',
+    download_url="https://github.com/Demonware/bladerunner",
+    tests_require=["nose", "tornado"],
+    test_suite="nose.collector",
     license="BSD",
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Environment :: Console',
-        'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: BSD License',
-        'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python',
-        'Topic :: System :: Clustering',
-        'Topic :: System :: Systems Administration',
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Console",
+        "Intended Audience :: System Administrators",
+        "License :: OSI Approved :: BSD License",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python",
+        "Topic :: System :: Clustering",
+        "Topic :: System :: Systems Administration",
     ],
 )

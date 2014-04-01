@@ -1,6 +1,6 @@
 """This file is part of Bladerunner.
 
-Copyright (c) 2013, Activision Publishing, Inc.
+Copyright (c) 2014, Activision Publishing, Inc.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -30,11 +30,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
-from .cmdline import cmdline_entry
-from .progressbar import ProgressBar
-from .progressbar import get_term_width
-from .bladerunner import Bladerunner
-from .bladerunner import main_exit
-from .bladerunner import consolidate
-from .bladerunner import pretty_results
-from .bladerunner import csv_results
+__version__ = "4.0.0"
+__release_date__ = "March 27, 2014"
+
+
+from bladerunner.base import Bladerunner
+from bladerunner.cmdline import cmdline_entry, cmdline_exit
+from bladerunner.progressbar import ProgressBar, get_term_width
+from bladerunner.formatting import consolidate, pretty_results, csv_results
