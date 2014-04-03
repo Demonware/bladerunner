@@ -34,6 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import unicode_literals
 import os
+import sys
 import math
 import time
 import getpass
@@ -70,6 +71,8 @@ class Bladerunner(object):
         style: integer for outputting. Between 0-3 are pretty, or CSV (0)
         csv_char: string character to use for CSV results (",")
         progressbar: boolean to declare if we want a progress display (False)
+        unix_line_endings: force sending LF as line endings for commands
+        windows_line_endings: force sending CRLF as line endings for commands
     """
 
     def __init__(self, options=None):
@@ -81,6 +84,7 @@ class Bladerunner(object):
         defaults = {
             "cmd_timeout": 20,
             "csv_char": ",",
+            "debug": False,
             "delay": None,
             "extra_prompts": [],
             "jump_host": None,
@@ -97,8 +101,10 @@ class Bladerunner(object):
             "style": 0,
             "threads": 100,
             "timeout": 20,
+            "unix_line_endings": False,
             "username": None,
             "width": None,
+            "windows_line_endings": False,
         }
 
         for key, value in defaults.items():
@@ -117,6 +123,11 @@ class Bladerunner(object):
             "Password denied (err: -5)",
             "Shell prompt guessing failure (err: -6)",
         ]
+
+        if sys.version_info > (3,):
+            self.unicode_chr = chr
+        else:
+            self.unicode_chr = unichr
 
         self.progress = None
         self.sshc = None
@@ -162,7 +173,7 @@ class Bladerunner(object):
             )
             if error_code < 0:
                 message = int(math.fabs(error_code)) - 1
-                raise SystemExit("Jumpbox Error: {}".format(
+                raise SystemExit("Jumpbox Error: {0}".format(
                     self.errors[message]))
 
         if self.options["delay"] or self.options["jump_host"]:
@@ -359,7 +370,20 @@ class Bladerunner(object):
         """
 
         try:
-            server.sendline(command)
+            if self.options["unix_line_endings"]:
+                server.send("{0}{1}".format(
+                    command,
+                    self.unicode_chr(0x000A),
+                ))
+            elif self.options["windows_line_endings"]:
+                server.send("{0}{1}{2}".format(
+                    command,
+                    self.unicode_chr(0x000D),
+                    self.unicode_chr(0x000A),
+                ))
+            else:
+                server.sendline(command)
+
             cmd_response = server.expect(
                 self.options["shell_prompts"] +
                 self.options["extra_prompts"] +
@@ -414,7 +438,7 @@ class Bladerunner(object):
             replacements = ["\\", "/", ")", "(", "[", "]", "{", "}", " ", "$",
                             "?", ">", "<", "^", ".", "*"]
             for char in replacements:
-                new_prompt = new_prompt.replace(char, "\{}".format(char))
+                new_prompt = new_prompt.replace(char, "\{0}".format(char))
 
             if new_prompt and new_prompt not in self.options["shell_prompts"]:
                 self.options["shell_prompts"].append(new_prompt)
@@ -480,18 +504,47 @@ class Bladerunner(object):
             if not command_result or command_result == "\n":
                 command_results.append((
                     command,
-                    "no output from: {}".format(command),
+                    "no output from: {0}".format(command),
                 ))
             elif command_result == -1:
                 command_results.append((
                     command,
-                    "did not return after issuing: {}".format(command),
+                    "did not return after issuing: {0}".format(command),
                 ))
             else:
                 command_results.append((command, command_result))
 
         results["results"] = command_results
         return results
+
+    def _build_ssh_command(self, target, username, port):
+        """Builds the ssh connection command.
+
+        Args::
+
+            target: string hostname to connect to
+            username: string username to connect as
+            port: integer port number to use
+
+        Returns:
+            string ssh command with valid option flags
+        """
+
+        # default flags
+        flags = ["-p", str(port), "-t"]
+
+        if self.options["ssh_key"] and os.path.isfile(self.options["ssh_key"]):
+            flags.extend(["-i", self.options["ssh_key"]])
+
+        debug = self.options["debug"]
+        if isinstance(debug, int) and debug > 0:
+            flags.append("-{0}".format("v" * debug))
+
+        return "ssh {flags} {user}@{host}".format(
+            flags = " ".join(flags),
+            user=username,
+            host=target,
+        )
 
     def connect(self, target, username, password, port):
         """Connects to a server, maybe from another server.
@@ -510,26 +563,15 @@ class Bladerunner(object):
         if not can_resolve(target):
             return (None, -3)
 
+        ssh_cmd = self._build_ssh_command(target, username, port)
+
         if not self.sshc:
             try:
-                if self.options["ssh_key"] and \
-                   os.path.isfile(self.options["ssh_key"]):
-                    sshr = pexpect.spawn(
-                        "ssh -p {portnumber} -ti {key} {user}@{host}".format(
-                            portnumber=port,
-                            key=self.options["ssh_key"],
-                            user=username,
-                            host=target,
-                        )
-                    )
-                else:
-                    sshr = pexpect.spawn(
-                        "ssh -p {portnumber} -t {user}@{host}".format(
-                            portnumber=port,
-                            user=username,
-                            host=target,
-                        )
-                    )
+                sshr = pexpect.spawn(ssh_cmd)
+
+                if self.options["debug"]:
+                    sshr.logfile_read = sys.stdout
+
                 login_response = sshr.expect(
                     self.options["passwd_prompts"] +
                     self.options["shell_prompts"] +
@@ -539,23 +581,12 @@ class Bladerunner(object):
 
                 if self.options["jump_host"]:
                     self.sshc = sshr
-                    return self._multipass(self.sshc, password, login_response)
-                else:
-                    return self._multipass(sshr, password, login_response)
+
+                return self._multipass(sshr, password, login_response)
             except (pexpect.TIMEOUT, pexpect.EOF):
                 return (None, -1)
         else:
-            if self.options["ssh_key"]:
-                self.sshc.sendline("ssh -ti {key} {user}@{host}".format(
-                    key=self.options["ssh_key"],
-                    user=username,
-                    host=target,
-                ))
-            else:
-                self.sshc.sendline("ssh -t {user}@{host}".format(
-                    user=username,
-                    host=target,
-                ))
+            self.sshc.sendline(ssh_cmd)
 
             try:
                 login_response = self.sshc.expect(
@@ -678,7 +709,7 @@ class Bladerunner(object):
         if not self.options["jump_host"]:
             return
         try:
-            sshc.sendline("\003")
+            sshc.sendline(self.unicode_chr(0x003))
             sshc.expect(
                 self.options["shell_prompts"] +
                 self.options["extra_prompts"],
@@ -761,17 +792,21 @@ def _set_shells(options):
     if not options["username"]:
         options["username"] = getpass.getuser()
 
-    shells.append("\\[{}@.*\\]\\$".format(options["username"]))
-    shells.append("{}@.*:~\\$".format(options["username"]))
-    password_shells.append("{}@.*assword\\:".format(options["username"]))
-    password_shells.append("{}\\:".format(options["username"]))
+    shells.append("\\[{0}@.*\\]\\$".format(options["username"]))
+    shells.append("{0}@.*:~\\$".format(options["username"]))
+    password_shells.append("{0}@.*assword\\:".format(options["username"]))
+    password_shells.append("{0}\\:".format(options["username"]))
 
     if options["jump_user"]:
-        shells.append("\\[{}@.*\\]\\$".format(options["jump_user"]))
-        shells.append("{}@.*:~\\$".format(options["jump_user"]))
-        password_shells.append("{}@.*assword:".format(options["jump_user"]))
-        password_shells.append("{}:".format(options["jump_user"]))
+        shells.append("\\[{0}@.*\\]\\$".format(options["jump_user"]))
+        shells.append("{0}@.*:~\\$".format(options["jump_user"]))
+        password_shells.append("{0}@.*assword:".format(options["jump_user"]))
+        password_shells.append("{0}:".format(options["jump_user"]))
 
     options["shell_prompts"] = shells
     options["passwd_prompts"] = password_shells
+
+    if not isinstance(options["extra_prompts"], list):
+        options["extra_prompts"] = [options["extra_prompts"]]
+
     return options

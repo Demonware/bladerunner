@@ -33,6 +33,7 @@ It may be useful to run Bladerunner from inside another script. Here's how::
           "username": "joebob",
           "password": "hunter7",
           "ssh_key": None,
+          "debug": False,
           "delay": None,
           "extra_prompts": ["core-router1>"],
           "width": 80,
@@ -48,6 +49,8 @@ It may be useful to run Bladerunner from inside another script. Here's how::
           "cmd_timeout": 20,
           "timeout": 20,
           "style": 0,
+          "unix_line_endings": False,
+          "windows_line_endings": False,
           "csv_char": ",",
           "progressbar": True,
       }
@@ -90,7 +93,8 @@ It is recommended that you use gen.Task to do this inside of Tornado, but Blader
           commands = self.qs_dict.get("commands", [])
           servers = self.qs_dict.get("servers", [])
           if commands and servers:
-              options = {"username": "root"}
+              # password can be a list to try multiple passwords per host
+              options = {"username": "root", "password": ["r00t", "d3f4ult"]}
               results = yield gen.Task(threaded_commands, options, commands, servers)
               self.write(200, results)
           else:

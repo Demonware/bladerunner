@@ -30,6 +30,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
+__version__ = "4.0.1"
+__release_date__ = "April 3, 2014"
+
+
 from bladerunner.base import Bladerunner
 from bladerunner.cmdline import cmdline_entry, cmdline_exit
 from bladerunner.progressbar import ProgressBar, get_term_width

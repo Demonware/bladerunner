@@ -37,10 +37,7 @@ import sys
 import getpass
 import argparse
 
-
-__version__ = "3.9.9-3"
-__release_date__ = "March 11, 2014"
-
+from bladerunner import __version__, __release_date__
 from bladerunner.formatting import csv_results, pretty_results
 
 
@@ -70,6 +67,8 @@ def cmdline_entry():
         settings.username = settings.username[0]
     if settings.jump_user:
         settings.jump_user = settings.jump_user[0]
+    if settings.debug is None:
+        settings.debug = True
 
     if settings.settingsDebug:
         sys.exit(str(settings))
@@ -110,6 +109,7 @@ def convert_to_options(settings):
         "jump_host": settings.jump_host,
         "jump_pass": settings.jump_pass,
         "jump_port": settings.jump_port,
+        "debug": settings.debug,
         "delay": settings.delay,
         "output_file": settings.output_file,
         "password": settings.password,
@@ -123,6 +123,8 @@ def convert_to_options(settings):
         "extra_prompts": settings.extra_prompts or [],
         "progressbar": True,
         "port": settings.port,
+        "unix_line_endings": settings.unix_line_endings,
+        "windows_line_endings": settings.windows_line_endings,
     }
 
 
@@ -136,6 +138,8 @@ Options:
 -T --connection-timeout=<seconds>\tSpecify the SSH timeout (default: 20s)
 -C --csv\t\t\t\tOutput in CSV format, not grouped by similarity
 -E --csv-separator=<char>\t\tSpecify the seperation character with CSV output
+   --debug=<int>\t\t\tSend debugging to stdout, optional int of ssh debug level
+-e --end\t\t\t\tSignal the end of flags, useful with --debug or -m ordering
 -f --file=<file>\t\t\tLoad commands from a file
 -x --fixed\t\t\t\tUse a fixed 80 character width for output
 -h --help\t\t\t\tThis help screen
@@ -155,8 +159,10 @@ Options:
 -k --ssh-key=<file>\t\t\tUse a non-default ssh key
 -t --threads=<int>\t\t\tMaximum concurrent threads (default: 100)
 -d --time-delay=<seconds>\t\tAdd a time delay between hosts (default: 0s)
+-X --unix-line-endings\t\t\tForce the use of \\n for newlines
 -u --username=<username>\t\tUse a different user name (default: {username})
--v --version\t\t\t\tDisplays version information\n""".format(
+-v --version\t\t\t\tDisplays version information
+-W --windows-line-endings\t\tForce the use of \\r\\n for newlines\n""".format(
         username=getpass.getuser(),
     ))
 
@@ -172,7 +178,7 @@ def get_commands(settings):
             command_list = []
             with open(settings.command_file[0]) as command_file:
                 for command_line in command_file:
-                    command_line = command_line.strip(os.linesep)
+                    command_line = command_line.strip()
                     if not command_line:
                         continue
                     else:
@@ -254,6 +260,8 @@ def argparse_unlisted(settings):
         settings.jump_port = settings.jump_port[0]
     if isinstance(settings.port, list):
         settings.port = settings.port[0]
+    if isinstance(settings.debug, list):
+        settings.debug = settings.debug[0]
 
     if settings.output_file:
         settings.output_file = settings.output_file[0]
@@ -321,6 +329,24 @@ def setup_argparse(args):
         nargs=1,
         type=str,
         default=",",
+    )
+
+    parser.add_argument(
+        "--debug",
+        dest="debug",
+        metavar="INT",
+        nargs="?",
+        type=int,
+        default=False,
+    )
+
+    parser.add_argument(
+        "--end",
+        "--this-is-the-end",
+        "-e",
+        dest="jim_morrison",
+        action="store_true",
+        default=False,
     )
 
     parser.add_argument(
@@ -510,6 +536,14 @@ def setup_argparse(args):
     )
 
     parser.add_argument(
+        "--unix-line-endings",
+        "-X",
+        dest="unix_line_endings",
+        action="store_true",
+        default=False,
+    )
+
+    parser.add_argument(
         "--no-password-check",
         "-N",
         dest="password_safety",
@@ -526,6 +560,14 @@ def setup_argparse(args):
             pyv="{py.major}.{py.minor}.{py.micro}".format(py=sys.version_info),
             date=__release_date__,
         ),
+    )
+
+    parser.add_argument(
+        "--windows-line-endings",
+        "-W",
+        dest="windows_line_endings",
+        action="store_true",
+        default=False,
     )
 
     parser.add_argument(
