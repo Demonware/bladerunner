@@ -33,6 +33,7 @@ It may be useful to run Bladerunner from inside another script. Here's how::
           "username": "joebob",
           "password": "hunter7",
           "ssh_key": None,
+          "debug": False,
           "delay": None,
           "extra_prompts": ["core-router1>"],
           "width": 80,
@@ -48,6 +49,8 @@ It may be useful to run Bladerunner from inside another script. Here's how::
           "cmd_timeout": 20,
           "timeout": 20,
           "style": 0,
+          "unix_line_endings": False,
+          "windows_line_endings": False,
           "csv_char": ",",
           "progressbar": True,
       }

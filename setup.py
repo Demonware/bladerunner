@@ -4,13 +4,22 @@
 from setuptools import setup
 
 
+with open("bladerunner/__init__.py", "r") as openinit:
+    for line in openinit.readlines():
+        if line.startswith("__version__ ="):
+            __version__ = line[14:].replace('"', "").replace('"', "").strip()
+            break
+    else:
+        __version__ = "0.0-version-unknown"
+
+
 setup(
     name="bladerunner",
-    version="4.0.0",
+    version=__version__,
     author="Adam Talsma",
     author_email="adam@demonware.net",
     packages=["bladerunner"],
-    install_requires=["pexpect", "futures"],
+    install_requires=["pexpect >= 3.0", "futures"],
     scripts=["bin/bladerunner"],
     url="https://github.com/Demonware/bladerunner",
     description="Execution of commands on hosts",
