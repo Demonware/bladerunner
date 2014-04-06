@@ -194,7 +194,7 @@ def get_commands(settings):
                         command_list.append(command_line)
             commands = command_list
         except IOError:
-            raise SystemExit("Could not open file: {}".format(
+            raise SystemExit("Could not open file: {0}".format(
                 settings.command_file[0]))
     else:
         commands = [settings.command]
@@ -216,7 +216,7 @@ def get_servers(settings):
                             servers.append(server.strip())
             settings.servers = servers
         except IOError:
-            raise SystemExit("Could not open file: {}".format(
+            raise SystemExit("Could not open file: {0}".format(
                 settings.host_file[0]))
 
     if len(settings.servers) == 0 or not settings.servers[0]:
@@ -289,7 +289,7 @@ def setup_output_file(settings):
             with open(settings.output_file, "a"):
                 os.utime(settings.output_file, None)
         except IOError as error:
-            raise SystemExit("Could not open output file: {}".format(error))
+            raise SystemExit("Could not open output file: {0}".format(error))
 
 
 def setup_argparse(args):
