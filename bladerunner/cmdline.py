@@ -49,7 +49,7 @@ def cmdline_entry():
     if settings.getHelp:
         parser.print_usage()
         print_help()
-        sys.exit(0)
+        raise SystemExit
 
     commands, settings = get_commands(settings)
 
@@ -71,7 +71,9 @@ def cmdline_entry():
         settings.debug = True
 
     if settings.settingsDebug:
-        sys.exit(str(settings))
+        raise SystemExit(str(settings))
+
+    setup_output_file(settings)
 
     options = convert_to_options(settings)
 
@@ -168,7 +170,14 @@ Options:
 
 
 def get_commands(settings):
-    """Opens the command file from the settings dictionary, returns both."""
+    """Opens the command file from the settings namespace.
+
+    Args:
+        settings: the argparse namespace from the cmdline
+
+    Returns:
+        tuple of (commands list, settings namespace)
+    """
 
     if settings.command_file:
         settings.servers.insert(0, settings.command)
@@ -198,7 +207,7 @@ def get_servers(settings):
 
     servers = []
 
-    if settings.host_file and os.path.isfile(settings.host_file[0]):
+    if settings.host_file:
         try:
             with open(settings.host_file[0], "r") as serverfile:
                 for line in serverfile.readlines():
@@ -226,7 +235,7 @@ def get_passwords(settings):
         settings.second_password = settings.password
 
     if settings.setjumpbox_password and settings.jump_host:
-        settings.jumpbox_password = getpass.getpass("Jumpbox password: ")
+        settings.jump_pass = getpass.getpass("Jumpbox password: ")
     elif not settings.jump_pass:
         settings.jump_pass = settings.password
 
@@ -236,43 +245,51 @@ def get_passwords(settings):
 def argparse_unlisted(settings):
     """Argparse likes to nest everything in lists. This undoes that."""
 
+    unlistings = [
+        "delay",
+        "password",
+        "second_password",
+        "jump_pass",
+        "port",
+        "jump_port",
+        "debug",
+        "output_file",
+    ]
+
+    for unlisting in unlistings:
+        if isinstance(getattr(settings, unlisting), list):
+            setattr(settings, unlisting, getattr(settings, unlisting)[0])
+
+    unlist_from_defaults = [
+        ("cmd_timeout", 20),
+        ("timeout", 20),
+        ("threads", 100),
+    ]
+
+    for setting, default in unlist_from_defaults:
+        if getattr(settings, setting) != default:
+            setattr(settings, setting, getattr(settings, setting)[0])
+
     if settings.printFixed:
         settings.printFixed = 80
-    if settings.cmd_timeout != 20:
-        settings.cmd_timeout = int(settings.cmd_timeout[0])
-    if settings.timeout != 20:
-        settings.timeout = int(settings.timeout[0])
-    if settings.delay:
-        settings.delay = settings.delay[0]
-    if settings.password:
-        settings.password = settings.password[0]
-    if settings.second_password:
-        settings.second_password = settings.second_password[0]
-    if settings.jump_pass:
-        settings.jump_pass = settings.jump_pass[0]
-    if settings.csv_char != ',':
-        settings.csv_char = settings.csv_char[0][0]
     if settings.ascii:
         settings.style = 1
-    if settings.threads != 100:
-        settings.threads = int(settings.threads[0])
-    if isinstance(settings.jump_port, list):
-        settings.jump_port = settings.jump_port[0]
-    if isinstance(settings.port, list):
-        settings.port = settings.port[0]
-    if isinstance(settings.debug, list):
-        settings.debug = settings.debug[0]
+    if settings.csv_char != ',':
+        settings.csv_char = settings.csv_char[0][0]
+
+    return settings
+
+
+def setup_output_file(settings):
+    """Make sure we can write to the output file if that's being used."""
 
     if settings.output_file:
-        settings.output_file = settings.output_file[0]
         # "touch" the file, ensures we can write the output before execution
         try:
             with open(settings.output_file, "a"):
                 os.utime(settings.output_file, None)
         except IOError as error:
             raise SystemExit("Could not open output file: {}".format(error))
-
-    return settings
 
 
 def setup_argparse(args):
