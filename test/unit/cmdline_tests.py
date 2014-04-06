@@ -219,7 +219,7 @@ class CmdLineTests(unittest.TestCase):
         options = {"style": 2}
         results = [{"name": "fake", "results": [("echo wat", "wat")]}]
 
-        if sys.version < (3,):
+        if sys.version_info < (3,):
             second = u"unichr"
         else:
             second = "unichr"
