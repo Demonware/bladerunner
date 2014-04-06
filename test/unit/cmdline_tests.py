@@ -196,9 +196,10 @@ class CmdLineTests(unittest.TestCase):
         """If the user supplies an invalid style int, should default to CSV."""
 
         options = {"style": 1234}
-        with self.assertRaises(SystemExit), \
-             patch.object(cmdline, "csv_results") as csv:
-            cmdline_exit([], options)
+        # <= py2.6 doesn't like multi-with statements
+        with self.assertRaises(SystemExit):
+            with patch.object(cmdline, "csv_results") as csv:
+                cmdline_exit([], options)
 
         self.assertTrue(csv.called)
 
@@ -206,9 +207,9 @@ class CmdLineTests(unittest.TestCase):
         """If style is valid, the output should be parsed by pretty_results."""
 
         options = {"style": 2}
-        with self.assertRaises(SystemExit), \
-             patch.object(cmdline, "pretty_results") as pretty:
-            cmdline_exit([], options)
+        with self.assertRaises(SystemExit):
+            with patch.object(cmdline, "pretty_results") as pretty:
+                cmdline_exit([], options)
 
         self.assertTrue(pretty.called)
 
@@ -218,14 +219,19 @@ class CmdLineTests(unittest.TestCase):
         options = {"style": 2}
         results = [{"name": "fake", "results": [("echo wat", "wat")]}]
 
+        if sys.version < (3,):
+            second = u"unichr"
+        else:
+            second = "unichr"
+
         mock_error = Mock(
-            side_effect=UnicodeEncodeError("utf-8", u"unichr", 1, 1, "chars")
+            side_effect=UnicodeEncodeError("utf-8", second, 1, 1, "chars")
         )
 
-        with self.assertRaises(SystemExit), \
-             patch.object(cmdline, "csv_results") as csv, \
-             patch.object(cmdline, "pretty_results", new=mock_error):
-            cmdline_exit(results, options)
+        with self.assertRaises(SystemExit):
+            with patch.object(cmdline, "csv_results") as csv:
+                with patch.object(cmdline, "pretty_results", new=mock_error):
+                    cmdline_exit(results, options)
 
         self.assertTrue(csv.called)
 
