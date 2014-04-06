@@ -7,6 +7,11 @@ import tempfile
 import unittest
 from mock import Mock, patch
 
+if sys.version_info <= (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
+
 if sys.version_info >= (3, 0):
     from io import StringIO
 else:
@@ -220,7 +225,7 @@ class CmdLineTests(unittest.TestCase):
         results = [{"name": "fake", "results": [("echo wat", "wat")]}]
 
         if sys.version_info < (3,):
-            second = u"unichr"
+            second = unicode("unichr")
         else:
             second = "unichr"
 

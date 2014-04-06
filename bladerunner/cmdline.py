@@ -574,7 +574,7 @@ def setup_argparse(args):
         action="version",
         version="Bladerunner {ver} on Python {pyv}. Released: {date}\n".format(
             ver=__version__,
-            pyv="{py.major}.{py.minor}.{py.micro}".format(py=sys.version_info),
+            pyv="{0}.{1}.{2}".format(*sys.version_info[:3]),
             date=__release_date__,
         ),
     )
