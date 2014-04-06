@@ -1,6 +1,7 @@
 """Tests for the command line entry."""
 
 
+import os
 import sys
 import getpass
 import tempfile
@@ -20,13 +21,14 @@ else:
 from bladerunner import cmdline
 from bladerunner.base import Bladerunner
 from bladerunner.cmdline import (
+    argparse_unlisted,
     cmdline_entry,
     cmdline_exit,
-    print_help,
     get_commands,
-    get_servers,
     get_passwords,
-    argparse_unlisted,
+    get_servers,
+    print_help,
+    setup_output_file,
 )
 
 
@@ -224,10 +226,10 @@ class CmdLineTests(unittest.TestCase):
         options = {"style": 2}
         results = [{"name": "fake", "results": [("echo wat", "wat")]}]
 
-        if sys.version_info < (3,):
-            second = unicode("unichr")
-        else:
+        if self.py3_enabled:
             second = "unichr"
+        else:
+            second = unicode("unichr")
 
         mock_error = Mock(
             side_effect=UnicodeEncodeError("utf-8", second, 1, 1, "chars")
@@ -424,6 +426,29 @@ class CmdLineTests(unittest.TestCase):
         self.assertEqual(settings.jump_pass, "mock")
         self.assertEqual(settings.password, "hunter7")
         self.assertEqual(settings.second_password, "hunter8")
+
+    def test_touching_output_file(self):
+        """Check that the output file is writable before starting."""
+
+        class FakeSettings(object):
+            output_file = tempfile.mktemp()
+
+        settings = FakeSettings()
+        self.assertFalse(os.path.exists(settings.output_file))
+        setup_output_file(settings)
+        self.assertTrue(os.path.exists(settings.output_file))
+
+    def test_output_file_failure(self):
+        """If we can't write the output file, it should raise SystemExit."""
+
+        class FakeSettings(object):
+            output_file = "/this/file/path/probably/doesnt/exist/i/hope"
+
+        with self.assertRaises(SystemExit) as error:
+            setup_output_file(FakeSettings())
+
+        message = self._get_error_message(error)
+        self.assertIn("Could not open output file: ", message)
 
 
 if __name__ == "__main__":
