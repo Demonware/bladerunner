@@ -86,12 +86,12 @@ class ProgressBar(object):
         except (KeyError, TypeError):
             self.show_counters = True
 
-        self.chars["left"][self.style] = "{}{}".format(
+        self.chars["left"][self.style] = "{0}{1}".format(
             options.get("left_padding", ""),
             self.chars["left"][self.style],
         )
 
-        self.chars["right"][self.style] = "{}{}".format(
+        self.chars["right"][self.style] = "{0}{1}".format(
             self.chars["right"][self.style],
             options.get("right_padding", ""),
         )

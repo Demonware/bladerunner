@@ -496,7 +496,7 @@ def write(string, options):
                             with open(new_file_location, "a") as outputfile:
                                 outputfile.write(string)
                         except Exception as error:  # catch em all
-                            print("Errored again: {}".format(error))
+                            print("Errored again: {0}".format(error))
                             continue
                     else:
                         raise error

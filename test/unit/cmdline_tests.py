@@ -355,7 +355,7 @@ class CmdLineTests(unittest.TestCase):
             self.assertEqual(
                 getattr(settings, unlisting),
                 getattr(FakeSettings, unlisting)[0],
-                "{} was not unlisted".format(unlisting),
+                "{0} was not unlisted".format(unlisting),
             )
 
         self.assertEqual(settings.printFixed, 80, "fixed == 80")
