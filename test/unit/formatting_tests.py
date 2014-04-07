@@ -115,7 +115,7 @@ class TestFormatting(unittest.TestCase):
         else:
             self.assertEqual(output, starting)
 
-    def test_consolidte_results(self):
+    def test_consolidate_results(self):
         """Consolidate should merge matching server result sets."""
 
         expected_groups = [
