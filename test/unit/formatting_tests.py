@@ -2,10 +2,12 @@
 """Unit tests for Bladerunner's output formatting."""
 
 
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
 
+import os
 import sys
-from mock import patch
+import tempfile
+from mock import Mock, patch
 
 if sys.version_info <= (2, 7):
     import unittest2 as unittest
@@ -13,8 +15,10 @@ else:
     import unittest
 
 if sys.version_info >= (3, 0):
+    import builtins
     from io import StringIO
 else:
+    import __builtin__
     from StringIO import StringIO
 
 from bladerunner import formatting
@@ -298,6 +302,118 @@ class TestFormatting(unittest.TestCase):
 
         # finally check total length
         self.assertEqual(len(stdout), 5)
+
+    def test_writing_to_file(self):
+        """Ensure we can write out to a file."""
+
+        string = "some string with words and stuff in it"
+        options = {"output_file": tempfile.mktemp()}
+        formatting.write(string, options)
+        with open(options["output_file"], "r") as openoutput:
+            self.assertIn(string, openoutput.read())
+
+    def test_errors_writing_to_stdout(self):
+        """We should prompt the user if there's an error printing."""
+
+        fallback_file = tempfile.mktemp()
+
+        mock_input = patch.object(
+            formatting,
+            "_prompt_for_input_on_error",
+            side_effect=["yes", fallback_file]
+        )
+
+        if sys.version_info > (3,):
+            m_print = Mock(
+                "builtins.print",
+                side_effect=UnicodeDecodeError(
+                    "utf-8", memoryview(bytes("fake", "utf-8")), 1, 1, "mock"),
+            )
+            print_patch = patch.object(builtins, "print", new=m_print)
+        else:
+            m_print = Mock(
+                "__builtin__.print",
+                side_effect=UnicodeDecodeError(
+                    str("utf-8"), str("fake"), 1, 1, str("mock")),
+            )
+            print_patch = patch.object(__builtin__, str("print"), new=m_print)
+
+        with print_patch:
+            with mock_input:
+                formatting.write("super important data", {})
+
+        self.assertTrue(os.path.exists(fallback_file))
+
+        with open(fallback_file, "r") as openfile:
+            self.assertIn("super important data", openfile.read())
+
+    def test_user_requested_raise(self):
+        """If the user doesn't answer "yes", raise the error during write."""
+
+        mock_input = patch.object(
+            formatting,
+            "_prompt_for_input_on_error",
+            return_value="no",
+        )
+
+        if sys.version_info > (3,):
+            m_print = Mock(
+                "builtins.print",
+                side_effect=UnicodeDecodeError(
+                    "utf-8", memoryview(bytes("fake", "utf-8")), 1, 1, "mock"),
+            )
+            print_patch = patch.object(builtins, "print", new=m_print)
+        else:
+            m_print = Mock(
+                "__builtin__.print",
+                side_effect=UnicodeDecodeError(
+                    str("utf-8"), str("fake"), 1, 1, str("mock")),
+            )
+            print_patch = patch.object(__builtin__, str("print"), new=m_print)
+
+        with self.assertRaises(UnicodeDecodeError):
+            with print_patch:
+                with mock_input:
+                    formatting.write("super important data", {})
+
+    def test_prompt_for_user_input(self):
+        """Make sure we prompt the user with the string provided."""
+
+        error = IOError("totes fake")
+
+        if sys.version_info > (3,):
+            mock_input = Mock("builtins.input", return_value="words")
+            input_patch = patch.object(builtins, "input", new=mock_input)
+        else:
+            mock_input = Mock("__builtin__.input", return_value="words")
+            input_patch = patch.object(__builtin__, "input", new=mock_input)
+
+        with input_patch as patched:
+            formatting._prompt_for_input_on_error("prompted with:", error)
+
+        patched.assert_called_once_with("prompted with:")
+
+    def test_raise_error_during_prompt(self):
+        """Ensure the original exception is raised if the user sends ^C."""
+
+        error = OSError("totes fake")
+
+        if sys.version_info > (3,):
+            mock_input = Mock("builtins.input", side_effect=KeyboardInterrupt)
+            input_patch = patch.object(builtins, "input", new=mock_input)
+        else:
+            mock_input = Mock(
+                "__builtin__.input",
+                side_effect=KeyboardInterrupt,
+            )
+            input_patch = patch.object(__builtin__, "input", new=mock_input)
+
+        with self.assertRaises(OSError) as raised_error:
+            with input_patch as patched:
+                formatting._prompt_for_input_on_error("prompted with:", error)
+
+        patched.assert_called_once_with("prompted with:")
+        self.assertEqual("totes fake", str(raised_error.exception))
 
 
 if __name__ == "__main__":

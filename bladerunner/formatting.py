@@ -475,26 +475,35 @@ def write(string, options):
         try:
             print(string, end="")
         except UnicodeDecodeError as error:
-            while True:
-                try:
-                    double_check = raw_input(
-                        "Errored printing the results. Would you like to "
-                        "write them to a file somewhere instead? "
-                    )
-                except KeyboardInterrupt:
-                    raise error
+            double_check = _prompt_for_input_on_error(
+                "Errored printing the results. Would you like to "
+                "write them to a file somewhere instead? ",
+                error,
+            )
 
-                if double_check.lower().startswith("y"):
-                    try:
-                        new_file_location = raw_input("File name: ")
-                    except KeyboardInterrupt:
-                        raise error
+            if double_check.lower().startswith("y"):
+                options["output_file"] = _prompt_for_input_on_error(
+                    "File name: ",
+                    error,
+                )
+                return write(string, options)
+            else:
+                raise error
 
-                    try:
-                        with open(new_file_location, "a") as outputfile:
-                            outputfile.write(string)
-                    except Exception as error:  # catch em all
-                        print("Errored again: {0}".format(error))
-                        continue
-                else:
-                    raise error
+
+def _prompt_for_input_on_error(user_msg, error):
+    """Prompt the user with a message. If they try to quit, raise the error.
+
+    Args::
+
+        user_msg: string message to display to the user
+        error: Exception class to raise if the user sends KeyboardInterrupt
+
+    Returns:
+        the user's reply to the string message
+    """
+
+    try:
+        return input(user_msg)
+    except KeyboardInterrupt:
+        raise error
