@@ -213,8 +213,8 @@ class TestFormatting(unittest.TestCase):
         formatting.pretty_header(options)
         stdout = sys.stdout.getvalue().strip()
 
-        self.assertIn("Server", stdout)
-        self.assertIn("Result", stdout)
+        self.assertIn(str("Server"), stdout)
+        self.assertIn(str("Result"), stdout)
 
     def test_header_with_jumphost(self):
         """The jumphost should appear in the header."""
@@ -225,10 +225,10 @@ class TestFormatting(unittest.TestCase):
 
         stdout = sys.stdout.getvalue().strip()
 
-        self.assertIn("Server", stdout)
-        self.assertIn("Result", stdout)
-        self.assertIn("Jumpbox", stdout)
-        self.assertIn("some_server", stdout)
+        self.assertIn(str("Server"), stdout)
+        self.assertIn(str("Result"), stdout)
+        self.assertIn(str("Jumpbox"), stdout)
+        self.assertIn(str("some_server"), stdout)
 
     def test_pretty_result(self):
         """Ensure pretty results are correctly printed."""
@@ -240,9 +240,9 @@ class TestFormatting(unittest.TestCase):
         stdout = sys.stdout.getvalue().strip()
 
         for server in results[0]["names"]:
-            self.assertIn(server, stdout)
+            self.assertIn(str(server), stdout)
         for _, result in results[0]["results"]:
-            self.assertIn(result, stdout)
+            self.assertIn(str(result), stdout)
 
     def test_bottom_up_in_first_result(self):
         """The first result when using a jumpbox should have a bot_up char."""
@@ -257,9 +257,9 @@ class TestFormatting(unittest.TestCase):
         stdout = sys.stdout.getvalue().strip()
 
         for server in results[0]["names"]:
-            self.assertIn(server, stdout)
+            self.assertIn(str(server), stdout)
         for _, result in results[0]["results"]:
-            self.assertIn(result, stdout)
+            self.assertIn(str(result), stdout)
 
         self.assertIn(options["chars"]["bot_up"][options["style"]], stdout)
 
@@ -281,21 +281,20 @@ class TestFormatting(unittest.TestCase):
 
         formatting._pretty_result(results[0], options, results)
         stdout = sys.stdout.getvalue().strip().splitlines()
-        # self.fail(stdout)
 
         # top line should be a space separators
         self.assertIn(
-            "{0}".format(options["chars"]["top"][options["style"]] * 10),
+            str("{0}".format(options["chars"]["top"][options["style"]] * 10)),
             stdout[0],
         )
 
         # then it should be the server name, separator and first line of cmd
-        self.assertIn("server_d_1", stdout[1])
+        self.assertIn(str("server_d_1"), stdout[1])
         self.assertIn(options["chars"]["side"][options["style"]], stdout[1])
 
         # then the multi line command should fill down the right column
         for line, fake_out in enumerate(fake_output, 1):
-            self.assertIn(fake_out, stdout[line])
+            self.assertIn(str(fake_out), stdout[line])
 
         # finally check total length
         self.assertEqual(len(stdout), 5)
