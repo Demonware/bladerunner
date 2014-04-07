@@ -35,7 +35,6 @@ from __future__ import print_function
 
 import os
 import re
-import sys
 
 from bladerunner.progressbar import get_term_width
 
@@ -90,20 +89,15 @@ def format_output(output, command):
 def format_line(line):
     """Removes whitespace, weird tabs, etc..."""
 
-    if sys.version_info >= (3, 0):
-        # output is in bytes in python3+
-        line = str(line, encoding="utf-8")
-    else:
-        # try to str.decode on the line for python2.x
-        for encoding in ["utf-8", "latin-1"]:
-            try:
-                line = line.decode(encoding)
-            except (UnicodeDecodeError, UnicodeEncodeError):
-                pass
-            else:
-                break
+    for encoding in ["utf-8", "latin-1"]:
+        try:
+            line = line.decode(encoding)
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            pass
         else:
-            return line  # can't decode this, not sure what to do. pass it back
+            break
+    else:
+        return line  # can't decode this, not sure what to do. pass it back
 
     line = line.strip(os.linesep)  # can't strip new lines enough
     line = line.replace("\r", "")  # no extra carriage returns
@@ -179,17 +173,20 @@ def csv_results(results, options=None):
             )
 
 
-def pretty_results(results, options=None):
-    """Prints the results in a relatively pretty way.
+def prepare_results(results, options=None):
+    """Prepare the results and options dictionary for pretty printing.
 
     Args::
 
-        results: the results dictionary from Bladerunner.run
-        options: a dictionary with optional keys.
-            style: integer style, from 0-3
-            jump_host: the string jumpbox hostname
-            width: integer fixed width for output
+        results: the bladerunner result dictionary
+        options: the bladerunner options dictionary
+
+    Returns:
+        a tuple of (results, options) after modifying the keys for printing
     """
+
+    if not options:
+        options = {}
 
     left_len = 0
     already_consolidated = False
@@ -207,55 +204,68 @@ def pretty_results(results, options=None):
     if left_len < 6:
         left_len = 6
 
-    # print characters, defined by options['style']
-    chars = {
-        "topLeft": ["┌", "*", "╔", "╭"],
+    # print characters, defined by options["style"]
+    options["chars"] = {
+        "top_left": ["┌", "*", "╔", "╭"],
         "top": ["─", "-", "═", "─"],
-        "topRight": ["┐", "*", "╗", "╮"],
-        "topDown": ["┬", "+", "╦", "┬"],
-        "sideLeft": ["├", "*", "╠", "├"],
+        "top_right": ["┐", "*", "╗", "╮"],
+        "top_down": ["┬", "+", "╦", "┬"],
+        "side_left": ["├", "*", "╠", "├"],
         "side": ["│", "|", "║", "│"],
         "middle": ["┼", "+", "╬", "┼"],
-        "sideRight": ["┤", "*", "╣", "┤"],
-        "botLeft": ["└", "*", "╚", "╰"],
+        "side_right": ["┤", "*", "╣", "┤"],
+        "bot_left": ["└", "*", "╚", "╰"],
         "bot": ["─", "-", "═", "─"],
-        "botRight": ["┘", "*", "╝", "╯"],
-        "botUp": ["┴", "+", "╩", "┴"],
+        "bot_right": ["┘", "*", "╝", "╯"],
+        "bot_up": ["┴", "+", "╩", "┴"],
     }
 
-    if not options:
-        options = {}
-
-    try:
-        assert 3 >= options["style"] >= 0
-    except (AssertionError, KeyError):
+    if not "style" in options or not 3 >= options["style"] >= 0:
         options["style"] = 0
 
     options["left_len"] = left_len
-    options["chars"] = chars
 
     try:
         width = options["width"] or get_term_width()
     except KeyError:
         width = get_term_width()
-
-    options["width"] = width
-
-    pretty_header(options)
+    finally:
+        options["width"] = width
 
     if not already_consolidated:
         results = consolidate(results)
+
+    return (results, options)
+
+
+def pretty_results(results, options=None):
+    """Prints the results in a relatively pretty way.
+
+    Args::
+
+        results: the results dictionary from Bladerunner.run
+        options: a dictionary with optional keys.
+            style: integer style, from 0-3
+            jump_host: the string jumpbox hostname
+            width: integer fixed width for output
+    """
+
+    results, options = prepare_results(results, options)
+
+    pretty_header(options)
 
     for result in results:
         _pretty_result(result, options, results)
 
     write(
         "{left_corner}{left}{up}{right}{right_corner}\n".format(
-            left_corner=chars["botLeft"][options["style"]],
-            left=chars["bot"][options["style"]] * (left_len + 2),
-            up=chars["botUp"][options["style"]],
-            right=chars["bot"][options["style"]] * (width - left_len - 5),
-            right_corner=chars["botRight"][options["style"]],
+            left_corner=options["chars"]["bot_left"][options["style"]],
+            left=options["chars"]["bot"][options["style"]] * (
+                options["left_len"] + 2),
+            up=options["chars"]["bot_up"][options["style"]],
+            right=options["chars"]["bot"][options["style"]] * (
+                options["width"] - options["left_len"] - 5),
+            right_corner=options["chars"]["bot_right"][options["style"]],
         ),
         options,
     )
@@ -273,20 +283,17 @@ def pretty_header(options):
             jump_host: a string hostname of the jumpbox (if any)
     """
 
-    if "jump_host" in options:
-        jumphost = options["jump_host"]
-    else:
-        jumphost = None
+    jumphost = options.get("jump_host")
 
     if jumphost:
         write(
             "{l_corner}{left}{down}{right}{down}{jumpbox}{r_corner}\n".format(
-                l_corner=options["chars"]["topLeft"][options["style"]],
+                l_corner=options["chars"]["top_left"][options["style"]],
                 left=options["chars"]["top"][options["style"]] * (
                     options["left_len"]
                     + 2
                 ),
-                down=options["chars"]["topDown"][options["style"]],
+                down=options["chars"]["top_down"][options["style"]],
                 right=options["chars"]["top"][options["style"]] * (
                     options["width"]
                     - options["left_len"]
@@ -296,7 +303,7 @@ def pretty_header(options):
                 jumpbox=options["chars"]["top"][options["style"]] * (
                     len(jumphost) + 11
                 ),
-                r_corner=options["chars"]["topRight"][options["style"]],
+                r_corner=options["chars"]["top_right"][options["style"]],
             ),
             options,
         )
@@ -321,18 +328,18 @@ def pretty_header(options):
     else:
         write(
             "{l_corner}{left}{down}{right}{r_corner}\n".format(
-                l_corner=options["chars"]["topLeft"][options["style"]],
+                l_corner=options["chars"]["top_left"][options["style"]],
                 left=options["chars"]["top"][options["style"]] * (
                     options["left_len"]
                     + 2
                 ),
-                down=options["chars"]["topDown"][options["style"]],
+                down=options["chars"]["top_down"][options["style"]],
                 right=options["chars"]["top"][options["style"]] * (
                     options["width"]
                     - options["left_len"]
                     - 5
                 ),
-                r_corner=options["chars"]["topRight"][options["style"]],
+                r_corner=options["chars"]["top_right"][options["style"]],
             ),
             options,
         )
@@ -357,10 +364,6 @@ def _pretty_result(result, options, consolidated_results):
         consolidate_results: the output from consolidate
     """
 
-    chars = options["chars"]
-    left_len = options["left_len"]
-    width = options["width"]
-
     result_lines = []
     for command, command_result in result["results"]:
         command_split = no_empties(command_result.split("\n"))
@@ -372,26 +375,26 @@ def _pretty_result(result, options, consolidated_results):
     else:
         max_length = len(result["names"])
 
-    if consolidated_results.index(result) == 0 and "jump_host" in options \
-       and options["jump_host"]:
+    if consolidated_results.index(result) == 0 and options.get("jump_host"):
         # first split has a bottom up character when using a jumpbox
         write(
             "{l_edge}{left}{middle}{right}{up}{jumpbox}{r_edge}\n".format(
-                l_edge=chars["sideLeft"][options["style"]],
-                left=chars["top"][options["style"]] * (left_len + 2),
-                middle=chars["middle"][options["style"]],
-                right=chars["top"][options["style"]] * (
-                    width
-                    - left_len
+                l_edge=options["chars"]["side_left"][options["style"]],
+                left=options["chars"]["top"][options["style"]] * (
+                    options["left_len"] + 2),
+                middle=options["chars"]["middle"][options["style"]],
+                right=options["chars"]["top"][options["style"]] * (
+                    options["width"]
+                    - options["left_len"]
                     - 17
                     - len(options["jump_host"] or "")
                 ),
-                up=chars["botUp"][options["style"]],
-                jumpbox=chars["top"][options["style"]] * (
+                up=options["chars"]["bot_up"][options["style"]],
+                jumpbox=options["chars"]["top"][options["style"]] * (
                     len(options["jump_host"] or "")
                     + 11
                 ),
-                r_edge=chars["sideRight"][options["style"]],
+                r_edge=options["chars"]["side_right"][options["style"]],
             ),
             options,
         )
@@ -399,11 +402,13 @@ def _pretty_result(result, options, consolidated_results):
         # typical horizontal split
         write(
             "{l_side}{left}{middle}{right}{r_side}\n".format(
-                l_side=chars["sideLeft"][options["style"]],
-                left=chars["top"][options["style"]] * (left_len + 2),
-                middle=chars["middle"][options["style"]],
-                right=chars["top"][options["style"]] * (width - left_len - 5),
-                r_side=chars["sideRight"][options["style"]],
+                l_side=options["chars"]["side_left"][options["style"]],
+                left=options["chars"]["top"][options["style"]] * (
+                    options["left_len"] + 2),
+                middle=options["chars"]["middle"][options["style"]],
+                right=options["chars"]["top"][options["style"]] * (
+                    options["width"] - options["left_len"] - 5),
+                r_side=options["chars"]["side_right"][options["style"]],
             ),
             options,
         )
@@ -413,17 +418,18 @@ def _pretty_result(result, options, consolidated_results):
         try:
             write(
                 "{side} {server}{gap} {side} ".format(
-                    side=chars["side"][options["style"]],
+                    side=options["chars"]["side"][options["style"]],
                     server=result["names"][command],
-                    gap=" " * (left_len - len(str(result["names"][command]))),
+                    gap=" " * (options["left_len"] - len(
+                        str(result["names"][command]))),
                 ),
                 options,
             )
         except IndexError:
             write(
                 "{side} {gap} {side} ".format(
-                    side=chars["side"][options["style"]],
-                    gap=" " * left_len,
+                    side=options["chars"]["side"][options["style"]],
+                    gap=" " * options["left_len"],
                 ),
                 options,
             )
@@ -434,20 +440,20 @@ def _pretty_result(result, options, consolidated_results):
                 "{result}{gap} {side}\n".format(
                     result=result_lines[command],
                     gap=" " * (
-                        width
-                        - left_len
+                        options["width"]
+                        - options["left_len"]
                         - 7
                         - len(result_lines[command])
                     ),
-                    side=chars["side"][options["style"]],
+                    side=options["chars"]["side"][options["style"]],
                 ),
                 options,
             )
         except IndexError:
             write(
                 "{gap} {side}\n".format(
-                    gap=" " * (width - left_len - 7),
-                    side=chars["side"][options["style"]],
+                    gap=" " * (options["width"] - options["left_len"] - 7),
+                    side=options["chars"]["side"][options["style"]],
                 ),
                 options,
             )
@@ -462,13 +468,6 @@ def write(string, options):
         options: the options dictionary, uses 'output_file' key only
     """
 
-    for encoding in ["utf-8", "latin-1"]:
-        try:
-            string = string.encode(encoding)
-            break
-        except UnicodeDecodeError as error:
-            pass
-
     if options.get("output_file"):
         with open(options["output_file"], "a") as outputfile:
             outputfile.write(string)
@@ -476,27 +475,26 @@ def write(string, options):
         try:
             print(string, end="")
         except UnicodeDecodeError as error:
-            if not options.get("output_file"):
-                while True:
+            while True:
+                try:
+                    double_check = raw_input(
+                        "Errored printing the results. Would you like to "
+                        "write them to a file somewhere instead? "
+                    )
+                except KeyboardInterrupt:
+                    raise error
+
+                if double_check.lower().startswith("y"):
                     try:
-                        double_check = raw_input(
-                            "Errored printing the results. Would you like to "
-                            "write them to a file somewhere instead? "
-                        )
+                        new_file_location = raw_input("File name: ")
                     except KeyboardInterrupt:
                         raise error
 
-                    if double_check.lower().startswith("y"):
-                        try:
-                            new_file_location = raw_input("File name: ")
-                        except KeyboardInterrupt:
-                            raise error
-
-                        try:
-                            with open(new_file_location, "a") as outputfile:
-                                outputfile.write(string)
-                        except Exception as error:  # catch em all
-                            print("Errored again: {0}".format(error))
-                            continue
-                    else:
-                        raise error
+                    try:
+                        with open(new_file_location, "a") as outputfile:
+                            outputfile.write(string)
+                    except Exception as error:  # catch em all
+                        print("Errored again: {0}".format(error))
+                        continue
+                else:
+                    raise error
