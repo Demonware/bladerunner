@@ -33,8 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import division, unicode_literals
+
 import os
 import sys
 
@@ -56,10 +56,11 @@ class ProgressBar(object):
         """
 
         self.total = total_updates
-        try:
-            self.total_width = options['width'] or get_term_width()
-        except (KeyError, TypeError):
-            self.total_width = get_term_width()
+
+        if options is None:
+            options = {}
+
+        self.total_width = options.get('width', get_term_width())
 
         self.counter = 0  # update counter
         self.chars = {
@@ -72,19 +73,12 @@ class ProgressBar(object):
             100: ["=", "*", "█"],
         }
 
-        try:
-            if options["style"] < 0 or \
-               options["style"] >= len(self.chars["left"]):
-                self.style = 0
-            else:
-                self.style = options["style"]
-        except (KeyError, TypeError):
+        if 0 <= options.get("style", 0) <= len(self.chars["left"]) - 1:
+            self.style = options.get("style", 0)
+        else:
             self.style = 0
 
-        try:
-            self.show_counters = options["show_counters"]
-        except (KeyError, TypeError):
-            self.show_counters = True
+        self.show_counters = options.get("show_counters")
 
         self.chars["left"][self.style] = "{0}{1}".format(
             options.get("left_padding", ""),
@@ -206,7 +200,7 @@ def get_term_width():
     env = os.environ
 
     def ioctl_try(os_fd):
-        """Internal method to ask the fcntl module for the window size."""
+        """Ask the fcntl module for the window size from the os_fd."""
 
         try:
             import fcntl
@@ -216,15 +210,10 @@ def get_term_width():
             return None
 
         try:
-            termsize = struct.unpack(
+            return struct.unpack(
                 str("hh"),
-                fcntl.ioctl(
-                    os_fd,
-                    termios.TIOCGWINSZ,
-                    "1234",
-                )
+                fcntl.ioctl(os_fd, termios.TIOCGWINSZ, "1234")
             )
-            return termsize
         except Exception:
             return None
 
@@ -253,7 +242,7 @@ def cmd_line_help(name):
         "\t-c --count=<int>\t\t\tThe number of updates (default 10)\n"
         "\t-d --delay=<seconds>\t\t\tThe seconds between updates (default 1)\n"
         "\t-h --help\t\t\t\tDisplay this help message and quit\n"
-        "\t--hide-counters\t\t\t\tDo not show the counters\n"
+        "\t-H --hide-counters\t\t\tDo not show the counters\n"
         "\t-l --left-padding=<str>\t\t\tPad the left side of the bar\n"
         "\t-r --right-padding=<str>\t\tPad the right side of the bar\n"
         "\t-s --style=<int>\t\t\tUse an alternate style (default 0)\n"
@@ -334,6 +323,7 @@ def cmd_line_arguments(args):
 
     parser.add_argument(
         "--hide-counters",
+        "-H",
         dest="show_counters",
         action="store_false",
         default=True,
@@ -350,25 +340,20 @@ def cmd_line_arguments(args):
     options = parser.parse_args(args)
 
     if options.helper:
-        cmd_line_help(sys.argv[0].split("/")[-1])
+        cmd_line_help(os.path.splitext(__file__)[0])
 
-    if isinstance(options.count, list):
-        options.count = options.count[0]
+    unlistings = [
+        "count",
+        "delay",
+        "style",
+        "width",
+        "left_padding",
+        "right_padding",
+    ]
 
-    if isinstance(options.delay, list):
-        options.delay = options.delay[0]
-
-    if isinstance(options.style, list):
-        options.style = options.style[0]
-
-    if isinstance(options.width, list):
-        options.width = options.width[0]
-
-    if isinstance(options.left_padding, list):
-        options.left_padding = options.left_padding[0]
-
-    if isinstance(options.right_padding, list):
-        options.right_padding = options.right_padding[0]
+    for unlisting in unlistings:
+        if isinstance(getattr(options, unlisting), list):
+            setattr(options, unlisting, getattr(options, unlisting)[0])
 
     return options
 
@@ -390,11 +375,12 @@ if __name__ == "__main__":
             "right_padding": OPTIONS.right_padding,
         },
     )
+
     try:
-        for i in range(OPTIONS.count):
+        for _ in range(OPTIONS.count):
             time.sleep(OPTIONS.delay)
             PROGRESSBAR.update()
     except KeyboardInterrupt:
         pass
+
     sys.stdout.write("\n")
-    raise SystemExit()

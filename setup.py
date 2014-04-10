@@ -2,6 +2,7 @@
 
 
 from setuptools import setup
+from setuptools.command.test import test as TestCommand
 
 
 with open("bladerunner/__init__.py", "r") as openinit:
@@ -11,6 +12,25 @@ with open("bladerunner/__init__.py", "r") as openinit:
             break
     else:
         __version__ = "0.0-version-unknown"
+
+
+class PyTest(TestCommand):
+    """Shim in pytest to be able to use it with setup.py test."""
+
+    def finalize_options(self):
+        """Stolen from http://pytest.org/latest/goodpractises.html."""
+
+        TestCommand.finalize_options(self)
+        self.test_args = ["-v", "-rf", "test"]
+        self.test_suite = True
+
+    def run_tests(self):
+        """Also shamelessly stolen."""
+
+        # have to import here, outside the eggs aren't loaded
+        import pytest
+        errno = pytest.main(self.test_args)
+        raise SystemExit(errno)
 
 
 setup(
@@ -31,8 +51,8 @@ setup(
         "custom networking and host setups."
     ),
     download_url="https://github.com/Demonware/bladerunner",
-    tests_require=["nose", "tornado"],
-    test_suite="nose.collector",
+    tests_require=["pytest", "mock", "tornado"],
+    cmdclass={"test": PyTest},
     license="BSD",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
