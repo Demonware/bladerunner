@@ -134,6 +134,12 @@ class Bladerunner(object):
         self.commands = None
         self.commands_on_servers = None
 
+        if not self.options["windows_line_endings"] and \
+          not self.options["unix_line_endings"] and hasattr(os, "uname") and \
+          "darwin" in os.uname()[0].lower():
+            # Apples have special needs... default them to unix line endings
+            self.options["unix_line_endings"] = True
+
         super(Bladerunner, self).__init__()
 
     def run(self, commands=None, servers=None, commands_on_servers=None):
