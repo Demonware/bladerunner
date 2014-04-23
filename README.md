@@ -8,7 +8,6 @@ bladerunner
 
 ==========
 
-
 Bladerunner is a program to send and receive information from any type of ssh enabled text based device.
 It can run through a jumpbox if there are networking restrictions. You can also provide an additional password
 to use for any program after logging in, such as MySQL or sudo. bladerunner will attempt to use the host password

@@ -39,6 +39,22 @@ import re
 from bladerunner.progressbar import get_term_width
 
 
+class FakeStdOut(object):
+    """An object to pass to pexpect's debug logger to simulate sys.stdout."""
+
+    @staticmethod
+    def write(string):
+        """Fake write, use print instead."""
+
+        print(string.decode("utf-8").strip())
+
+    @staticmethod
+    def flush():
+        """Fake flush, print will flush."""
+
+        pass
+
+
 def no_empties(input_list):
     """Searches through a list and tosses empty elements."""
 
