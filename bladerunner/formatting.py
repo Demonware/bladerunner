@@ -46,7 +46,7 @@ class FakeStdOut(object):
     def write(string):
         """Fake write, use print instead."""
 
-        print(string.decode("utf-8").strip())
+        print(string.decode("latin-1").strip())
 
     @staticmethod
     def flush():
@@ -58,11 +58,11 @@ class FakeStdOut(object):
 def no_empties(input_list):
     """Searches through a list and tosses empty elements."""
 
-    output_list = []
+    out_list = []
     for item in input_list:
         if item:
-            output_list.append(item)
-    return output_list
+            out_list.append(item.encode("latin-1").decode("latin-1").strip())
+    return out_list
 
 
 def format_output(output, command):
