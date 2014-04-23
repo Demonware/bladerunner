@@ -1,52 +1,41 @@
 """Tests for Bladerunner's progressbar module."""
 
 
-import os
-import sys
-from mock import Mock, patch
-
-if sys.version_info <= (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
-
-if sys.version_info >= (3, 0):
-    from io import StringIO
-else:
-    from StringIO import StringIO
+import pytest
+from mock import patch
 
 from bladerunner import ProgressBar
 
 
-class ProgressBarTests(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        self.py3_enabled = sys.version_info > (3,)
-        super(ProgressBarTests, self).__init__(*args, **kwargs)
+def test_setup(capfd):
+    """Ensure we are setting up the pbar correctly."""
 
-    def setUp(self):
-        """Save sys.argv, stdout/err..."""
-
-        self._argv = sys.argv
-        self._stdout = sys.stdout
-        self._stderr = sys.stderr
-        sys.argv = ["progressbar.py"]
-        sys.stdout = StringIO()
-        sys.stderr = StringIO()
-
-    def tearDown(self):
-        """Restore sys.argv, stdout/err..."""
-
-        sys.argv = self._argv
-        sys.stdout = self._stdout
-        sys.stderr = self._stderr
-
-    def test_setup(self):
-        """Ensure we are setting up the pbar correctly."""
-
-        pbar = ProgressBar(10, {"left_padding": "ok then"})
-        self.assertEqual(pbar.total, 10)
+    pbar = ProgressBar(10, {"left_padding": "ok then"})
+    assert pbar.total == 10
+    pbar.setup()
+    out, _  = capfd.readouterr()
+    assert out.startswith("ok then")
 
 
+@pytest.mark.parametrize(
+    "options", 
+    [
+        {"width": None},
+        {"width": 0},
+        {"width": False},
+        {},
+    ],
+    ids=["None", "0", "False", "empty"],
+)
+def test_width_is_none(options):
+    """Regression test for 4.0.2 progressbar display bug."""
+    
+    width_patch = patch(
+        "bladerunner.progressbar.get_term_width", 
+        return_value=123,
+    )
+    with width_patch as patched_width:
+        pbar = ProgressBar(10, options)
+        patched_width.assert_called_once()
+    assert pbar.total_width == 123
 
-if __name__ == "__main__":
-    unittest.main()

@@ -60,7 +60,7 @@ class ProgressBar(object):
         if options is None:
             options = {}
 
-        self.total_width = options.get('width', get_term_width())
+        self.total_width = options.get('width') or get_term_width()
 
         self.counter = 0  # update counter
         self.chars = {
