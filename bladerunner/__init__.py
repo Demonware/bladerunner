@@ -30,7 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
-__version__ = "4.0.4"
+__version__ = "4.0.5"
 __release_date__ = "April 23, 2014"
 
 
