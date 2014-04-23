@@ -44,7 +44,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from bladerunner.progressbar import ProgressBar
 from bladerunner.networking import can_resolve, ips_in_subnet
-from bladerunner.formatting import format_line, format_output
+from bladerunner.formatting import FakeStdOut, format_line, format_output
 
 
 class Bladerunner(object):
@@ -576,7 +576,7 @@ class Bladerunner(object):
                 sshr = pexpect.spawn(ssh_cmd)
 
                 if self.options["debug"]:
-                    sshr.logfile_read = sys.stdout
+                    sshr.logfile_read = FakeStdOut
 
                 login_response = sshr.expect(
                     self.options["passwd_prompts"] +
