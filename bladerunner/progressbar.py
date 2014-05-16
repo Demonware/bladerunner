@@ -130,6 +130,8 @@ class ProgressBar(object):
         """Updates self.counter by increment and reprints the progress bar."""
 
         self.counter += increment
+        if self.counter > self.total:
+            return
         counter_diff = len(str(self.total)) - len(str(self.counter))
         percent = (self.counter / self.total) * (self.width + counter_diff)
 
