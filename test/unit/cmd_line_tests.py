@@ -116,12 +116,9 @@ class CmdLineTests(unittest.TestCase):
         message = self._get_error_message(error)
 
         should_finds = [
-            "command='uptime'",
-            "servers=['somehost.com']",
-            "debug=False",
-            "password_safety=False",
-            "password=None",
-            "command_file=False",
+            "'debug': False",
+            "'password_safety': False",
+            "'password': None",
         ]
         for should_find in should_finds:
             self.assertIn(should_find, message)
@@ -321,7 +318,7 @@ class CmdLineTests(unittest.TestCase):
             debug = [3]
             output_file = False
             style = None
-            width = [22]
+            width = False
 
         settings = argparse_unlisted(FakeSettings())
 
@@ -337,7 +334,6 @@ class CmdLineTests(unittest.TestCase):
             "jump_port",
             "threads",
             "debug",
-            "width",
         ]
         for unlisting in unlistings:
             self.assertEqual(
@@ -349,6 +345,17 @@ class CmdLineTests(unittest.TestCase):
         self.assertEqual(settings.printFixed, 80, "fixed == 80")
         self.assertEqual(settings.style, 1, "ascii should set style to 1")
         self.assertEqual(settings.csv_char, ".", "csv_char is a single char")
+
+    def test_fixed_takes_priority(self):
+        """if both --fixed and --width are used, fixed should be prefered."""
+
+        sys.argv.extend(["--settings", "--fixed", "-nNw", "123", "hi", "fake"])
+        with self.assertRaises(SystemExit) as error:
+            cmdline_entry()
+
+        message = self._get_error_message(error)
+
+        assert "'width': 80" in message
 
 
 if __name__ == "__main__":

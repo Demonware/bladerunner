@@ -70,15 +70,15 @@ def cmdline_entry():
     if settings.debug is None:
         settings.debug = True
 
-    if settings.settingsDebug:
-        raise SystemExit(str(settings))
-
-    setup_output_file(settings)
-
     options = convert_to_options(settings)
 
     if settings.printCSV or settings.csv_char != ",":
         options['style'] = -1
+
+    if settings.settingsDebug:
+        raise SystemExit(str(options))
+
+    setup_output_file(settings)
 
     return commands, settings.servers, options
 
