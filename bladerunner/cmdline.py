@@ -38,7 +38,7 @@ import getpass
 import argparse
 
 from bladerunner import __version__, __release_date__
-from bladerunner.formatting import csv_results, pretty_results
+from bladerunner.formatting import csv_results, pretty_results, stacked_results
 
 
 def cmdline_entry():
@@ -89,10 +89,12 @@ def cmdline_exit(results, options):
     Args::
 
         results: the results dictionary from Bladerunner.run
-        options: the options dictionary, uses 'style' key only
+        options: the options dictionary, uses 'style' and 'stacked' keys
     """
 
-    if options["style"] < 0 or options["style"] > 3:
+    if options["stacked"]:
+        stacked_results(results, options)
+    elif options["style"] < 0 or options["style"] > 3:
         csv_results(results, options)
     else:
         try:
@@ -121,7 +123,8 @@ def convert_to_options(settings):
         "style": settings.style,
         "csv_char": settings.csv_char,
         "threads": settings.threads,
-        "width": settings.printFixed,
+        "stacked": settings.stacked,
+        "width": settings.printFixed or settings.width,
         "extra_prompts": settings.extra_prompts or [],
         "progressbar": True,
         "port": settings.port,
@@ -143,6 +146,7 @@ Options:
    --debug=<int>\t\t\tSend debugging to stdout, optional int of ssh debug level
 -e --end\t\t\t\tSignal the end of flags, useful with --debug or -m ordering
 -f --file=<file>\t\t\tLoad commands from a file
+-F --flat\t\t\t\tOutput results with a flattened/stacked output style
 -x --fixed\t\t\t\tUse a fixed 80 character width for output
 -h --help\t\t\t\tThis help screen
 -H --host-file=<file>\t\t\tLoad hosts from a file
@@ -164,6 +168,7 @@ Options:
 -X --unix-line-endings\t\t\tForce the use of \\n for newlines
 -u --username=<username>\t\tUse a different user name (default: {username})
 -v --version\t\t\t\tDisplays version information
+-w --width=<int>\t\t\tSpecify the maximum width to display results in
 -W --windows-line-endings\t\tForce the use of \\r\\n for newlines\n""".format(
         username=getpass.getuser(),
     ))
@@ -254,6 +259,7 @@ def argparse_unlisted(settings):
         "jump_port",
         "debug",
         "output_file",
+        "width",
     ]
 
     for unlisting in unlistings:
@@ -372,6 +378,14 @@ def setup_argparse(args):
         dest="command_file",
         metavar="FILE",
         nargs=1,
+        default=False,
+    )
+
+    parser.add_argument(
+        "--flat",
+        "-F",
+        dest="stacked",
+        action="store_true",
         default=False,
     )
 
@@ -584,6 +598,15 @@ def setup_argparse(args):
         "-W",
         dest="windows_line_endings",
         action="store_true",
+        default=False,
+    )
+
+    parser.add_argument(
+        "--width",
+        "-w",
+        dest="width",
+        nargs=1,
+        type=int,
         default=False,
     )
 
