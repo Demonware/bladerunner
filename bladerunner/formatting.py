@@ -211,10 +211,10 @@ def stacked_results(results, options=None):
             currently = sum([len(x) for x in line]) + + len(line)
             # if the name and space for a comma afterwards fit, add to the line
             if currently + (len(name) * 2) + 1 < options["width"]:
-                line.append("{}".format(name))
+                line.append(name)
             else:
                 server_lines.append(", ".join(line))
-                line = ["{},".format(name)]
+                line = [name]
 
         server_lines.append(", ".join(line))
 
@@ -524,7 +524,7 @@ def write(string, options, end=""):
 
     if options.get("output_file"):
         with open(options["output_file"], "a") as outputfile:
-            outputfile.write("{}{}".format(string, end))
+            outputfile.write("{0}{1}".format(string, end))
     else:
         try:
             print(string, end=end)
