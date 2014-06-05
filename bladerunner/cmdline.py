@@ -92,7 +92,7 @@ def cmdline_exit(results, options):
         options: the options dictionary, uses 'style' and 'stacked' keys
     """
 
-    if options["stacked"]:
+    if options.get("stacked"):
         stacked_results(results, options)
     elif options["style"] < 0 or options["style"] > 3:
         csv_results(results, options)
