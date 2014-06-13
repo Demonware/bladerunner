@@ -19,7 +19,7 @@ Use of Bladerunner from within Python
 It may be useful to run Bladerunner from inside another script. Here's how::
 
   from bladerunner.base import Bladerunner
-  from bladerunner.formatting import csv_results, pretty_results
+  from bladerunner.formatting import csv_results, pretty_results, stacked_results
 
   def bladerunner_test():
       """A simple test of bladerunner's execution and output formats."""
@@ -53,6 +53,7 @@ It may be useful to run Bladerunner from inside another script. Here's how::
           "windows_line_endings": False,
           "csv_char": ",",
           "progressbar": True,
+          "stacked": False,
       }
 
       # initialize Bladerunner with the options provided
@@ -68,6 +69,9 @@ It may be useful to run Bladerunner from inside another script. Here's how::
       for i in range(4):
           options["style"] = i
           pretty_results(results, options)
+
+      # Prints the results in a flat, vertically stacked way
+      stacked_results(results)
 
 
 Threaded Bladerunner
