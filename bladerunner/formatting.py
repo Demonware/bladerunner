@@ -189,6 +189,43 @@ def csv_results(results, options=None):
             )
 
 
+def stacked_results(results, options=None):
+    """Display the results in a vertical stack without a frame.
+
+    Args::
+
+        results: the bladerunner result dictionary
+        options: the bladerunner options dictionary
+    """
+
+    results, options = prepare_results(results, options)
+    spacer = False
+    for result_set in results:
+        if spacer:
+            write("=" * options["width"], options, end="\n")
+
+        server_lines = []
+        line = []
+        for name in result_set["names"]:
+            # get the current line length...
+            currently = sum([len(x) for x in line]) + + len(line)
+            # if the name and space for a comma afterwards fit, add to the line
+            if currently + (len(name) * 2) + 1 < options["width"]:
+                line.append(name)
+            else:
+                server_lines.append(", ".join(line))
+                line = [name]
+
+        server_lines.append(", ".join(line))
+
+        write("\n".join(server_lines), options, end="\n")
+        write("-" * options["width"], options, end="\n")
+        for _, result in result_set["results"]:
+            write(result, options, end="\n")
+
+        spacer = True
+
+
 def prepare_results(results, options=None):
     """Prepare the results and options dictionary for pretty printing.
 
@@ -201,7 +238,7 @@ def prepare_results(results, options=None):
         a tuple of (results, options) after modifying the keys for printing
     """
 
-    if not options:
+    if options is None:
         options = {}
 
     left_len = 0
@@ -475,21 +512,22 @@ def _pretty_result(result, options, consolidated_results):
             )
 
 
-def write(string, options):
+def write(string, options, end=""):
     """Writes a line of output to either the output file or stdout.
 
     Args::
 
         string: the string to write out
         options: the options dictionary, uses 'output_file' key only
+        end: character or empty string to end the print statement with
     """
 
     if options.get("output_file"):
         with open(options["output_file"], "a") as outputfile:
-            outputfile.write(string)
+            outputfile.write("{0}{1}".format(string, end))
     else:
         try:
-            print(string, end="")
+            print(string, end=end)
         except UnicodeDecodeError as error:
             double_check = _prompt_for_input_on_error(
                 "Errored printing the results. Would you like to "
@@ -502,7 +540,7 @@ def write(string, options):
                     "File name: ",
                     error,
                 )
-                return write(string, options)
+                return write(string, options, end)
             else:
                 raise error
 
