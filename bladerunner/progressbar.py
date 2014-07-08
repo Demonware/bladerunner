@@ -37,6 +37,15 @@ from __future__ import division, unicode_literals
 
 import os
 import sys
+import time
+import argparse
+
+try:
+    import fcntl
+    import termios
+    import struct
+except ImportError:
+    pass
 
 
 class ProgressBar(object):
@@ -73,8 +82,9 @@ class ProgressBar(object):
             100: ["=", "*", "█"],
         }
 
-        if 0 <= options.get("style", 0) <= len(self.chars["left"]) - 1:
-            self.style = options.get("style", 0)
+        styl = options.get("style", 0)
+        if isinstance(styl, int) and 0 <= styl <= len(self.chars["left"]) - 1:
+            self.style = styl
         else:
             self.style = 0
 
@@ -205,21 +215,15 @@ def get_term_width():
         """Ask the fcntl module for the window size from the os_fd."""
 
         try:
-            import fcntl
-            import termios
-            import struct
-        except ImportError:
-            return None
-
-        try:
             return struct.unpack(
                 str("hh"),
                 fcntl.ioctl(os_fd, termios.TIOCGWINSZ, "1234")
             )
-        except Exception:
+        except Exception:  # pokemon!
             return None
 
     termsize = ioctl_try(0) or ioctl_try(1) or ioctl_try(2)
+
     if not termsize:
         try:
             os_fd = os.open(os.ctermid(), os.O_RDONLY)
@@ -227,11 +231,13 @@ def get_term_width():
             os.close(os_fd)
         except Exception:
             pass
+
     if not termsize:
         try:
             termsize = (env["LINES"], env["COLUMNS"])
         except (IndexError, KeyError):
             termsize = (25, 80)
+
     return int(termsize[1])
 
 
@@ -360,29 +366,31 @@ def cmd_line_arguments(args):
     return options
 
 
-if __name__ == "__main__":
+def cmd_line_demo(args):
+    """Main command line entry point for the ProgressBar demo."""
 
-    import time
-    import argparse
+    options = cmd_line_arguments(args)
 
-    OPTIONS = cmd_line_arguments(sys.argv[1:])
-
-    PROGRESSBAR = ProgressBar(
-        OPTIONS.count,
+    pbar = ProgressBar(
+        options.count,
         {
-            "style": OPTIONS.style,
-            "width": OPTIONS.width,
-            "show_counters": OPTIONS.show_counters,
-            "left_padding": OPTIONS.left_padding,
-            "right_padding": OPTIONS.right_padding,
+            "style": options.style,
+            "width": options.width,
+            "show_counters": options.show_counters,
+            "left_padding": options.left_padding,
+            "right_padding": options.right_padding,
         },
     )
 
     try:
-        for _ in range(OPTIONS.count):
-            time.sleep(OPTIONS.delay)
-            PROGRESSBAR.update()
+        for _ in range(options.count):
+            time.sleep(options.delay)
+            pbar.update()
     except KeyboardInterrupt:
         pass
 
     sys.stdout.write("\n")
+
+
+if __name__ == "__main__":
+    cmd_line_demo(sys.argv[1:])

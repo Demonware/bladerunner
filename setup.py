@@ -21,7 +21,8 @@ class PyTest(TestCommand):
         """Stolen from http://pytest.org/latest/goodpractises.html."""
 
         TestCommand.finalize_options(self)
-        self.test_args = ["-v", "-rf", "test"]
+        self.test_args = ["-v", "-rf", "--cov-report", "term-missing", "--cov",
+                          "bladerunner", "test"]
         self.test_suite = True
 
     def run_tests(self):
@@ -39,7 +40,7 @@ setup(
     author="Adam Talsma",
     author_email="adam@demonware.net",
     packages=["bladerunner"],
-    install_requires=["pexpect >= 3.0", "futures"],
+    install_requires=["pexpect >= 3.0", "futures", "argparse"],
     scripts=["bin/bladerunner"],
     url="https://github.com/Demonware/bladerunner",
     description="Execution of commands on hosts",

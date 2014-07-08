@@ -213,7 +213,7 @@ def stacked_results(results, options=None):
             if currently + (len(name) * 2) + 1 < options["width"]:
                 line.append(name)
             else:
-                server_lines.append(", ".join(line))
+                server_lines.append(", ".join(line + [""]).strip())
                 line = [name]
 
         server_lines.append(", ".join(line))

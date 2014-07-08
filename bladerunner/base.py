@@ -157,10 +157,10 @@ class Bladerunner(object):
             is a list of tuples of commands issued and their replies.
         """
 
-        if not isinstance(servers, list):
+        if not isinstance(servers, (list, tuple)):
             servers = [servers]
 
-        if not isinstance(commands, list):
+        if not isinstance(commands, (list, tuple)):
             commands = [commands]
 
         servers = self._prep_servers(commands, servers, commands_on_servers)
@@ -240,20 +240,25 @@ class Bladerunner(object):
         """
 
         if commands_on_servers is not None:
+            actual_commands_on_servers = {}
             for server, command_list in commands_on_servers.items():
-                if not isinstance(command_list, list):
-                    command_list = [command_list]
+
+                if isinstance(command_list, (list, tuple)):
+                    commandlist = command_list
+                else:
+                    commandlist = [command_list]
 
                 network_members = ips_in_subnet(server)
                 if network_members:
-                    commands_on_servers.pop(server)
                     for member in network_members:
-                        commands_on_servers[member] = command_list
+                        actual_commands_on_servers[member] = commandlist
                 else:
-                    commands_on_servers[server] = command_list
+                    actual_commands_on_servers[server] = commandlist
 
-            expanded_servers = commands_on_servers.keys()
-            commands = None
+            self.commands = None
+            self.commands_on_servers = actual_commands_on_servers
+
+            expanded_servers = list(actual_commands_on_servers.keys())
         else:
             expanded_servers = []
             for server in servers:
@@ -263,8 +268,7 @@ class Bladerunner(object):
                 else:
                     expanded_servers.append(server)
 
-        self.commands = commands
-        self.commands_on_servers = commands_on_servers
+            self.commands = commands
 
         return expanded_servers
 
@@ -433,21 +437,22 @@ class Bladerunner(object):
             format_output if it can find a new prompt, or -1 on error
         """
 
-        try:
-            # prompt is usually in the last 30 chars of the last line of output
-            new_prompt = format_line(output.splitlines()[-1][-30:])
-        except IndexError:
-            # blank last line could cause an IndexError, should send a newline
-            pass
+        # prompt is usually in the last 30 chars of the last line of output
+        # need to setup a fallback in case output is empty. py3 is in bytes
+        if sys.version_info > (3,):
+            fback = [bytes("", "latin-1")]
         else:
-            # escape regex characters
-            replacements = ["\\", "/", ")", "(", "[", "]", "{", "}", " ", "$",
-                            "?", ">", "<", "^", ".", "*"]
-            for char in replacements:
-                new_prompt = new_prompt.replace(char, "\{0}".format(char))
+            fback = [""]
+        new_prompt = format_line((output.splitlines() or fback)[-1][-30:])
 
-            if new_prompt and new_prompt not in self.options["shell_prompts"]:
-                self.options["shell_prompts"].append(new_prompt)
+        # escape regex characters
+        replacements = ["\\", "/", ")", "(", "[", "]", "{", "}", " ", "$",
+                        "?", ">", "<", "^", ".", "*"]
+        for char in replacements:
+            new_prompt = new_prompt.replace(char, "\{0}".format(char))
+
+        if new_prompt and new_prompt not in self.options["shell_prompts"]:
+            self.options["shell_prompts"].append(new_prompt)
 
         try:
             server.sendline()
@@ -547,7 +552,7 @@ class Bladerunner(object):
             flags.append("-{0}".format("v" * debug))
 
         return "ssh {flags} {user}@{host}".format(
-            flags = " ".join(flags),
+            flags=" ".join(flags),
             user=username,
             host=target,
         )
@@ -617,14 +622,14 @@ class Bladerunner(object):
         Args::
 
             sshc: the pexpect object
-            passwords: list or string of passwords to try
+            passwords: list, tuple or string of passwords to try
             login_response: the pexpect return status integer
 
         Returns:
             a tuple of the pexpect object and error code, tries to be positive
         """
 
-        if not hasattr(passwords, "__iter__"):
+        if not isinstance(passwords, (list, tuple)):
             passwords = [passwords]
 
         error_code = -1
@@ -712,8 +717,6 @@ class Bladerunner(object):
             None: the sshc maintains its state and should be ready for use
         """
 
-        if not self.options["jump_host"]:
-            return
         try:
             sshc.sendline(self.unicode_chr(0x003))
             sshc.expect(
@@ -812,7 +815,7 @@ def _set_shells(options):
     options["shell_prompts"] = shells
     options["passwd_prompts"] = password_shells
 
-    if not isinstance(options["extra_prompts"], list):
+    if not isinstance(options["extra_prompts"], (list, tuple)):
         options["extra_prompts"] = [options["extra_prompts"]]
 
     return options
