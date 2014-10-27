@@ -49,20 +49,21 @@ except ImportError:
 
 
 class ProgressBar(object):
-    """A simple textual progress bar."""
+    """A simple textual progress bar.
+
+    Args::
+
+        total_updates: an integer of how many times update() will be called
+        options: a dictionary of additional options. schema:
+            width: an integer for fixed terminal width printing
+            style: an integer style, between 0-2
+            show_counters: a boolean to declare showing the counters or not
+            left_padding: a string to pad the left side of the bar with
+            right_padding: a string to pad the right side of the bar with
+    """
 
     def __init__(self, total_updates, options=None):
-        """Initializes the object.
-
-        Args:
-            total_updates: an integer of how many times update() will be called
-            options: a dictionary of additional options. schema:
-                width: an integer for fixed terminal width printing
-                style: an integer style, between 0-2
-                show_counters: a boolean to declare showing the counters or not
-                left_padding: a string to pad the left side of the bar with
-                right_padding: a string to pad the right side of the bar with
-        """
+        """Initializes the object with the options provided."""
 
         self.total = total_updates
 

@@ -1,4 +1,4 @@
-#coding: utf-8
+# coding: utf-8
 """Unit tests for Bladerunner's output formatting."""
 
 
@@ -391,8 +391,8 @@ def test_prompt_for_user_input():
         mock_input = Mock("builtins.input", return_value="words")
         input_patch = patch.object(builtins, "input", new=mock_input)
     else:
-        mock_input = Mock("__builtin__.input", return_value="words")
-        input_patch = patch.object(__builtin__, "input", new=mock_input)
+        mock_input = Mock("__builtin__.raw_input", return_value="words")
+        input_patch = patch.object(__builtin__, "raw_input", new=mock_input)
 
     with input_patch as patched:
         formatting._prompt_for_input_on_error("prompted with:", error)
@@ -410,10 +410,10 @@ def test_raise_error_during_prompt():
         input_patch = patch.object(builtins, "input", new=mock_input)
     else:
         mock_input = Mock(
-            "__builtin__.input",
+            "__builtin__.raw_input",
             side_effect=KeyboardInterrupt,
         )
-        input_patch = patch.object(__builtin__, "input", new=mock_input)
+        input_patch = patch.object(__builtin__, "raw_input", new=mock_input)
 
     with pytest.raises(OSError) as raised_error:
         with input_patch as patched:

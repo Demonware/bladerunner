@@ -185,15 +185,23 @@ def test_get_term_width():
         with patch.object(progressbar.fcntl, "ioctl", return_value=10) as p_io:
             assert progressbar.get_term_width() == 80  # default value
 
-    os_fd = os.open(os.ctermid(), os.O_RDONLY)
-    assert p_un.call_count == 4
-    assert p_io.mock_calls == [
+    calls_to_verify = [
         call(0, termios.TIOCGWINSZ, "1234"),
         call(1, termios.TIOCGWINSZ, "1234"),
         call(2, termios.TIOCGWINSZ, "1234"),
-        call(os_fd, termios.TIOCGWINSZ, "1234"),
     ]
-    os.close(os_fd)
+
+    try:
+        os_fd = os.open(os.ctermid(), os.O_RDONLY)
+        calls_to_verify.append(call(os_fd, termios.TIOCGWINSZ, "1234"))
+        calls_made = 4
+    except OSError:
+        calls_made = 3
+    else:
+        os.close(os_fd)
+    finally:
+        assert p_un.call_count == calls_made
+        assert p_io.mock_calls == calls_to_verify
 
 
 @pytest.mark.skipif(not "termios" in globals(), reason="termios not found")

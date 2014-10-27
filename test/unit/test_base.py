@@ -26,6 +26,13 @@ class TempFile(object):
         return TempFile._name
 
 
+def fake_context(*args, **kwargs):
+    """Empty 'function' to fool context."""
+
+    if args:
+        return args[0]
+
+
 @pytest.fixture
 def unicode_chr():
     """Return a consistant unichr/chr accross py2/3."""
@@ -52,6 +59,27 @@ def fake_key(request):
         key_file.write("ssh-rsa abcdefghijklmnopqrstuvwxyz1234567890 bob@fake")
     request.addfinalizer(key_cleanup)
     return fakekey
+
+
+# test functions to use with testing run_interactive_function
+def bad_function_1(session=None):
+    return session.run("who")
+
+def bad_function_2(session, other_thing=None):
+    return session.run("who")
+
+def bad_function_3(session, other_thing):
+    return session.run("who")
+
+
+@pytest.fixture(
+    params=(bad_function_1, bad_function_2, bad_function_3),
+    ids=("func with kwarg", "extra kwarg", "extra arg"),
+)
+def bad_interactive_function(request):
+    """Parametrizes the test function to use the four above functions."""
+
+    return request.param
 
 
 def key_cleanup():
@@ -447,6 +475,27 @@ def test_send_cmd_winderps_endings(unicode_chr):
         unicode_chr(0x000D),
         unicode_chr(0x000A),
     ))
+
+    assert server.expect.call_count == 1
+
+
+def test_send_cmd_no_line_endings():
+    """If are False, pexpect's sendline should be called (which uses os)."""
+
+    runner = Bladerunner()
+    # we need to update after init as init will fallback to os preferred
+    runner.options.update({
+        "unix_line_endings": False,
+        "windows_line_endings": False,
+    })
+    server = Mock()
+    server.expect = Mock(return_value=1)
+
+    with patch.object(base, "format_output") as p_format_output:
+        runner._send_cmd("fake_cmd", server)
+
+    p_format_output.assert_called_once_with(server.before, "fake_cmd")
+    server.sendline.assert_called_once_with("fake_cmd")
 
     assert server.expect.call_count == 1
 
@@ -920,3 +969,195 @@ def test_one_extra_prompt():
 
     runner = Bladerunner({"extra_prompts": "single_element"})
     assert "single_element" in runner.options["extra_prompts"]
+
+
+def test_setup_interactive():
+    """Ensure we can build the connection pool of interactive hosts."""
+
+    runner = Bladerunner()
+    assert runner.interactive_hosts == {}
+
+    with patch.object(runner, "interactive") as mock_interactive:
+        runner.setup_interactive("fake_place")
+
+    assert "fake_place" in runner.interactive_hosts
+    mock_interactive.assert_called_once_with("fake_place")
+
+
+def test_setup_interactive_many():
+    """We can initialize many hosts interactively at once."""
+
+    runner = Bladerunner()
+    assert runner.interactive_hosts == {}
+
+    with patch.object(runner, "interactive") as mock_interactive:
+        runner.setup_interactive(["fake", "place", "fake"])
+
+    assert "fake" in runner.interactive_hosts
+    assert "place" in runner.interactive_hosts
+
+    assert mock_interactive.call_count == 2
+    mock_interactive.assert_any_call("fake")
+    mock_interactive.assert_any_call("place")
+
+
+def test_end_interactive():
+    """Ensure we can remove interactive sessions from teh object pool."""
+
+    runner = Bladerunner()
+    mock_host = Mock()
+    runner.interactive_hosts = {"fake": mock_host}
+
+    runner.end_interactive("fake")
+    mock_host.end.assert_called_once_with()
+    assert "fake" not in runner.interactive_hosts
+
+    # running this multiple times shouldn't matter/do anything
+    runner.end_interactive("fake")
+
+
+def test_run_interactive(capfd):
+    """Ensure the calls to run a command on a list of hosts interactively."""
+
+    runner = Bladerunner({"threads": 14})
+    fake_result = Mock()
+    fake_result.result = Mock(return_value="fake results")
+
+    mock_con = Mock()
+    runner.interactive_hosts = {"fake host": mock_con}
+
+    fake_thread = Mock()
+    fake_thread.__enter__ = fake_context
+    fake_thread.__exit__ = fake_context
+    fake_thread.submit = Mock(return_value=fake_result)
+
+    threadpool_mock = patch.object(
+        base,
+        "ThreadPoolExecutor",
+        return_value=fake_thread,
+    )
+
+    with patch.object(runner, "setup_interactive") as mock_setup:
+        with threadpool_mock as mock_threadpool:
+            runner.run_interactive("fake cmd", "fake host")
+
+    mock_setup.assert_called_once_with("fake host")
+    mock_threadpool.assert_called_once_with(max_workers=14)
+
+    stdout, stderr = capfd.readouterr()
+    assert stdout == "fake host: fake results\n"
+    assert stderr == ""
+
+
+def test_run_interactive_returns():
+    """Confirm the dict return when print_results is False."""
+
+    runner = Bladerunner({"threads": 17})
+    fake_result = Mock()
+    fake_result.result = Mock(return_value="some result")
+
+    mock_con = Mock()
+    runner.interactive_hosts = {"host": mock_con}
+
+    fake_thread = Mock()
+    fake_thread.__enter__ = fake_context
+    fake_thread.__exit__ = fake_context
+    fake_thread.submit = Mock(return_value=fake_result)
+
+    threadpool_mock = patch.object(
+        base,
+        "ThreadPoolExecutor",
+        return_value=fake_thread,
+    )
+
+    with patch.object(runner, "setup_interactive") as mock_setup:
+        with threadpool_mock as mock_threadpool:
+            results = runner.run_interactive("ok", "host", print_results=False)
+
+    mock_setup.assert_called_once_with("host")
+    mock_threadpool.assert_called_once_with(max_workers=17)
+
+    assert results == {"host": "some result"}
+
+
+def test_interactive_functions(bad_interactive_function):
+    """Ensure the functions are inspected as correct then run with hosts."""
+
+    runner = Bladerunner()
+    with pytest.raises(TypeError):
+        runner.run_interactive_function(bad_interactive_function)
+
+
+def test_interactive_function_success():
+    """Ensure the function is called when it passes inspection."""
+
+    def good_function(session):
+        return session.run("who")
+
+    runner = Bladerunner()
+    mock_hosts = Mock()
+    # we need to mock out the interactive_hosts dict b/c dict.values will
+    # return a new object every time, making the assert_called_once_with fail
+    runner.interactive_hosts = mock_hosts
+
+    map_mock = patch.object(
+        base.ThreadPoolExecutor,
+        "map",
+        return_value=["totes fake"],
+    )
+
+    with patch.object(runner, "setup_interactive") as mock_setup:
+        with map_mock as mock_map:
+            res = runner.run_interactive_function(good_function, "some host")
+
+    mock_setup.assert_called_once_with("some host")
+    assert mock_map.call_count == 1
+    mock_map.assert_called_once_with(
+        good_function,
+        mock_hosts.values(),
+    )
+
+    assert res == ["totes fake"]
+
+
+def test_interactive_hostsfile():
+    """If passed a string file path as an arg, read the hosts per line."""
+
+    hostsfp = tempfile.mktemp()
+    test_hosts = ["something", "some", "thing", "else", "stuff"]
+
+    with open(hostsfp, "w") as hostsfile:
+        for test_host in test_hosts:
+            hostsfile.write("{0}\n".format(test_host))
+
+    runner = Bladerunner()
+    runner.setup_interactive(hostsfp)
+    setup_hosts = runner.interactive_hosts.keys()
+
+    for test_host in test_hosts:
+        assert test_host in setup_hosts
+
+    for setup_host in setup_hosts:
+        assert setup_host in test_hosts
+
+    os.remove(hostsfp)
+
+
+def test_end_interactive_file():
+    """The end_interactive method can also be passed a file of hostnames."""
+
+    runner = Bladerunner()
+    runner.setup_interactive(["one", "two", "three", "four", "five", "six"])
+
+    hostfp = tempfile.mktemp()
+    with open(hostfp, "w") as hostsfile:
+        hostsfile.write("one\nfour\nsix\n")
+
+    runner.end_interactive(hostfp)
+
+    for host in runner.interactive_hosts.keys():
+        assert host in ["two", "three", "five"]
+
+    assert len(runner.interactive_hosts) == 3
+
+    os.remove(hostfp)

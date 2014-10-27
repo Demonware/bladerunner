@@ -2,6 +2,8 @@
 of similar hosts over SSH using pexpect (http://pexpect.sourceforge.net). Can
 be extended to use an intermediary host if there are networking restrictions.
 
+This file is part of Bladerunner.
+
 Copyright (c) 2014, Activision Publishing, Inc.
 All rights reserved.
 
@@ -38,11 +40,13 @@ import sys
 import math
 import time
 import getpass
+import inspect
 import pexpect
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from bladerunner.progressbar import ProgressBar
+from bladerunner.interactive import BladerunnerInteractive
 from bladerunner.networking import can_resolve, ips_in_subnet
 from bladerunner.formatting import FakeStdOut, format_line, format_output
 
@@ -125,14 +129,17 @@ class Bladerunner(object):
         ]
 
         if sys.version_info > (3,):
+            self.string_type = str
             self.unicode_chr = chr
         else:
+            self.string_type = basestring
             self.unicode_chr = unichr
 
         self.progress = None
         self.sshc = None
         self.commands = None
         self.commands_on_servers = None
+        self.interactive_hosts = {}
 
         if not self.options["windows_line_endings"] and \
           not self.options["unix_line_endings"] and hasattr(os, "uname") and \
@@ -243,17 +250,15 @@ class Bladerunner(object):
             actual_commands_on_servers = {}
             for server, command_list in commands_on_servers.items():
 
-                if isinstance(command_list, (list, tuple)):
-                    commandlist = command_list
-                else:
-                    commandlist = [command_list]
+                if not isinstance(command_list, (list, tuple)):
+                    command_list = [command_list]
 
                 network_members = ips_in_subnet(server)
                 if network_members:
                     for member in network_members:
-                        actual_commands_on_servers[member] = commandlist
+                        actual_commands_on_servers[member] = command_list
                 else:
-                    actual_commands_on_servers[server] = commandlist
+                    actual_commands_on_servers[server] = command_list
 
             self.commands = None
             self.commands_on_servers = actual_commands_on_servers
@@ -634,8 +639,11 @@ class Bladerunner(object):
 
         error_code = -1
         for password in passwords:
-            sshc_returned, error_code = self.login(sshc, password,
-                login_response)
+            sshc_returned, error_code = self.login(
+                sshc,
+                password,
+                login_response,
+            )
             if sshc_returned and error_code > 0:
                 return (sshc_returned, error_code)
         else:
@@ -777,6 +785,168 @@ class Bladerunner(object):
                 )
             except (pexpect.TIMEOUT, pexpect.EOF):
                 pass
+
+    def interactive(self, server):
+        """Builds a BladerunnerInteractive version of this instance for a host.
+
+        Args:
+            server: string name or IP to connect interactively to
+
+        Returns:
+            BladerunnerInteractive object initialized for the server
+        """
+
+        return BladerunnerInteractive(self, server)
+
+    def _prep_interactive_hosts(self, hosts):
+        """Checks if hosts is a filepath, reads hosts from there if so.
+
+        Args:
+            hosts: string or list or string filepath
+
+        Returns:
+            list of string hostnames or IP addresses
+        """
+
+        if isinstance(hosts, self.string_type) and os.path.isfile(hosts):
+            hostfp = hosts
+            with open(hostfp, "r") as hostsfile:
+                hosts = hostsfile.read().splitlines()
+
+        if not isinstance(hosts, (list, tuple)):
+            hosts = [hosts]
+
+        return hosts
+
+    def setup_interactive(self, hosts):
+        """Initializes a list of hosts to be used interactively.
+
+        Args:
+            hosts: list of hostnames to connect to for interative use later
+        """
+
+        hosts = self._prep_interactive_hosts(hosts)
+
+        for host in hosts:
+            if host not in self.interactive_hosts:
+                self.interactive_hosts[host] = self.interactive(host)
+
+    def end_interactive(self, hosts=None):
+        """Ends an interactive stored session.
+
+        Args:
+            hosts: optional string or list of hostnames to end, or None for all
+        """
+
+        hosts = list(self.interactive_hosts.keys()) if hosts is None else hosts
+        hosts = self._prep_interactive_hosts(hosts)
+
+        for host in hosts:
+            session = self.interactive_hosts.pop(host, None)
+            if session is not None:
+                session.end()
+
+    def run_interactive(self, command, hosts=None, print_results=True):
+        """Runs a single command interactively on a list of hostnames.
+
+        Note:
+            the hosts kwarg can be omitted after the first run or if you call
+            setup_interactive before calling this method
+
+        Args::
+
+            command: string command to send
+            hosts: string or list of hostnames to add to the interactive list
+            print_results: boolean to print the results or return a dict
+
+        Returns:
+            None, or a dictionary of {host: result}
+        """
+
+        if hosts is not None:
+            self.setup_interactive(hosts)
+
+        hosts = self.interactive_hosts.keys()
+        results = {}
+        max_threads = self.options["threads"]
+
+        with ThreadPoolExecutor(max_workers=max_threads) as executor:
+            for host in hosts:
+                future = executor.submit(
+                    self.interactive_hosts[host].run,
+                    command,
+                )
+                results[host] = future.result()
+
+        if print_results:
+            for host, result in results.items():
+                print("{0}:{1}{2}".format(
+                    host,
+                    "\n" if len(result) > 79 else " ",
+                    result,
+                ))
+        else:
+            return results
+
+    def run_interactive_function(self, function, hosts=None):
+        """Runs a function defined by the user over a list of hosts.
+
+        The function made can contain logic within to send a different set of
+        commands based on the output of earlier ones issued.
+
+        The results returned are in the structure you decide in your own
+        function. If you do not return anything, this function will also
+        return None. The single argument that you are passed in your function
+        will be a BladerunnerInteractive object inialized for one of the hosts
+        in the list provided. Order of execution is not guarenteed.
+
+        Note also that the hosts kwarg is only required for the first run of
+        this function. Further runs will reuse the same interactive session(s).
+
+        Args::
+
+            function: a function to call with a BladerunnerInteractive object
+            hosts: list of hosts to run the function with
+
+        Returns:
+            list of returns from the function calls, or None
+        """
+
+        func_sig_error = (
+            "The function provided has an unexpected signature. It is "
+            "expected to receive only a single argument without a default. "
+            "It will be passed a BladerunnerInteractive object initialized "
+            "for a host during runtime. It is not expected to return "
+            "anything, but any returned objects will be collected in a list "
+            "and returned as a group once all runs are complete."
+        )
+
+        # signature check the passed in function.
+        if hasattr(inspect, "getfullargspec"):  # newer pythons
+            func_sig = inspect.getfullargspec(function)
+            if len(func_sig.args) != 1 or func_sig.varargs or \
+               func_sig.varkw or func_sig.defaults or func_sig.kwonlyargs or \
+               func_sig.kwonlydefaults or func_sig.annotations:
+                raise TypeError(func_sig_error)
+        else:
+            func_sig = inspect.getargspec(function)
+            if len(func_sig.args) != 1 or func_sig.varargs or \
+               func_sig.keywords or func_sig.defaults:
+                raise TypeError(func_sig_error)
+
+        if hosts is not None:
+            self.setup_interactive(hosts)
+
+        hosts = self.interactive_hosts.keys()
+        results = []
+        max_threads = self.options["threads"]
+
+        with ThreadPoolExecutor(max_workers=max_threads) as executor:
+            for res in executor.map(function, self.interactive_hosts.values()):
+                if res is not None:
+                    results.append(res)
+
+        return results or None
 
 
 def _set_shells(options):

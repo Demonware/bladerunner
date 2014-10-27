@@ -1,5 +1,7 @@
-#coding: utf-8
+# coding: utf-8
 """Bladerunner output formatting functions.
+
+This file is part of Bladerunner.
 
 Copyright (c) 2014, Activision Publishing, Inc.
 All rights reserved.
@@ -35,6 +37,7 @@ from __future__ import print_function
 
 import os
 import re
+import sys
 
 from bladerunner.progressbar import get_term_width
 
@@ -158,6 +161,9 @@ def csv_results(results, options=None):
         options: dictionary with optional keys:
             csv_char: a character or string to separate with
     """
+
+    if options is None:
+        options = {}
 
     if "csv_char" in options:
         csv_char = options["csv_char"]
@@ -558,6 +564,9 @@ def _prompt_for_input_on_error(user_msg, error):
     """
 
     try:
-        return input(user_msg)
+        if sys.version_info > (3,):
+            return input(user_msg)
+        else:
+            return raw_input(user_msg)
     except KeyboardInterrupt:
         raise error

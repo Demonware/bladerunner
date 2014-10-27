@@ -47,9 +47,7 @@ def cmdline_entry():
     settings, parser = setup_argparse(sys.argv[1:])
 
     if settings.getHelp:
-        parser.print_usage()
-        print_help()
-        raise SystemExit
+        raise SystemExit(print_help())
 
     commands, settings = get_commands(settings)
 
@@ -136,40 +134,47 @@ def convert_to_options(settings):
 def print_help():
     """Overrides argparses's --help, prints usage only."""
 
-    sys.stdout.write("""Note: [COMMAND] is only optional with --file/-f
+    sys.stdout.write("""{version}
+Usage:
+  bladerunner [OPTIONS] <COMMAND> <HOST> [HOST] ...
+Note:
+  <COMMAND> becomes optional if a command --file is used
+  <HOST> becomes optional if a --host-file is supplied
 Options:
--a --ascii\t\t\t\tUse ASCII output with normal results (same as --style=1)
--c --command-timeout=<seconds>\t\tShell timeout between commands (default: 20s)
--T --connection-timeout=<seconds>\tSpecify the SSH timeout (default: 20s)
--C --csv\t\t\t\tOutput in CSV format, not grouped by similarity
--E --csv-separator=<char>\t\tSpecify the seperation character with CSV output
-   --debug=<int>\t\t\tSend debugging to stdout, optional int of ssh debug level
--e --end\t\t\t\tSignal the end of flags, useful with --debug or -m ordering
--f --file=<file>\t\t\tLoad commands from a file
--F --flat\t\t\t\tOutput results with a flattened/stacked output style
--x --fixed\t\t\t\tUse a fixed 80 character width for output
--h --help\t\t\t\tThis help screen
--H --host-file=<file>\t\t\tLoad hosts from a file
--j --jumpbox=<host>\t\t\tUse a jumpbox to intermediary the targets
--P --jumpbox-password=<password>\tSeparate jumpbox password (-P to prompt)
--J --jumpbox-port=<port>\t\tUse a non-standard SSH port for the jumpbox
--U --jumpbox-username=<username>\tJumpbox user name (default: {username})
--m --match=<pattern> [pattern] ...\tMatch additional shell prompts
--n --no-password\t\t\tNo password prompt
--N --no-password-check\t\t\tDon't check if the first login succeeded
--o --output-file=<file>\t\t\tAppend the output to a file rather than stdout
--p --password=<password>\t\tSupply the host password on the command line
--D --port\t\t\t\tUse a non non-standard SSH port for the target hosts
--s --second-password=<password>\t\tSupply a second password (-s to prompt)
--S --style=<int>\t\t\tOutput style (0=default, 1=ASCII, 2=double, 3=rounded)
--k --ssh-key=<file>\t\t\tUse a non-default ssh key
--t --threads=<int>\t\t\tMaximum concurrent threads (default: 100)
--d --time-delay=<seconds>\t\tAdd a time delay between hosts (default: 0s)
--X --unix-line-endings\t\t\tForce the use of \\n for newlines
--u --username=<username>\t\tUse a different user name (default: {username})
--v --version\t\t\t\tDisplays version information
--w --width=<int>\t\t\tSpecify the maximum width to display results in
--W --windows-line-endings\t\tForce the use of \\r\\n for newlines\n""".format(
+  -a --ascii\t\t\t\tUse ASCII output with normal results (same as --style=1)
+  -c --command-timeout=<seconds>\tTimeout between commands (default: 20s)
+  -T --connection-timeout=<seconds>\tSpecify the SSH timeout (default: 20s)
+  -C --csv\t\t\t\tOutput in CSV format, not grouped by similarity
+  -E --csv-separator=<char>\t\tSpecify the seperation character with CSV output
+     --debug=[int]\t\t\tDebug to stdout, with optional int of ssh debug level
+  -e --end\t\t\t\tSignal the end of flags, useful with --debug or -m ordering
+  -f --file=<file>\t\t\tLoad commands from a file
+  -F --flat\t\t\t\tOutput results with a flattened/stacked output style
+  -x --fixed\t\t\t\tUse a fixed 80 character width for output
+  -h --help\t\t\t\tThis help screen
+  -H --host-file=<file>\t\t\tLoad hosts from a file
+  -j --jumpbox=<host>\t\t\tUse a jumpbox to intermediary the targets
+  -P --jumpbox-password=<password>\tSeparate jumpbox password (-P to prompt)
+  -J --jumpbox-port=<port>\t\tUse a non-standard SSH port for the jumpbox
+  -U --jumpbox-username=<username>\tJumpbox user name (default: {username})
+  -m --match=<pattern> [pattern] ...\tMatch additional shell prompts
+  -n --no-password\t\t\tNo password prompt
+  -N --no-password-check\t\tDon't check if the first login succeeded
+  -o --output-file=<file>\t\tAppend the output to a file rather than stdout
+  -p --password=<password>\t\tSupply the host password on the command line
+  -D --port\t\t\t\tUse a non non-standard SSH port for the target hosts
+  -s --second-password=<password>\tSupply a second password (-s to prompt)
+  -S --style=<int>\t\t\tOutput style (0=default, 1=ASCII, 2=double, 3=rounded)
+  -k --ssh-key=<file>\t\t\tUse a non-default ssh key
+  -t --threads=<int>\t\t\tMaximum concurrent threads (default: 100)
+  -d --time-delay=<seconds>\t\tAdd a time delay between hosts (default: 0s)
+  -X --unix-line-endings\t\tForce the use of \\n for newlines
+  -u --username=<username>\t\tUse a different user name (default: {username})
+  -v --version\t\t\t\tDisplays version information
+  -w --width=<int>\t\t\tSpecify the maximum width to display results in
+  -W --windows-line-endings\t\tForce the use of \\r\\n for newlines
+""".format(
+        version=get_version(),
         username=getpass.getuser(),
     ))
 
@@ -245,6 +250,16 @@ def get_passwords(settings):
         settings.jump_pass = settings.password
 
     return settings
+
+
+def get_version():
+    """Returns the version of Bladerunner and the python it's running on."""
+
+    return "Bladerunner {ver} on Python {pyv}. Released: {date}".format(
+        ver=__version__,
+        pyv="{0}.{1}.{2}".format(*sys.version_info[:3]),
+        date=__release_date__,
+    )
 
 
 def argparse_unlisted(settings):
@@ -586,11 +601,7 @@ def setup_argparse(args):
         "--version",
         "-v",
         action="version",
-        version="Bladerunner {ver} on Python {pyv}. Released: {date}\n".format(
-            ver=__version__,
-            pyv="{0}.{1}.{2}".format(*sys.version_info[:3]),
-            date=__release_date__,
-        ),
+        version=get_version(),
     )
 
     parser.add_argument(
@@ -604,6 +615,7 @@ def setup_argparse(args):
     parser.add_argument(
         "--width",
         "-w",
+        metavar="INT",
         dest="width",
         nargs=1,
         type=int,
