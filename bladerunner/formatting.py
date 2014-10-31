@@ -68,17 +68,21 @@ def no_empties(input_list):
     return out_list
 
 
-def format_output(output, command):
+def format_output(output, command, options=None):
     """Formatting function to strip colours, remove tabs, etc.
 
     Args::
 
         output: the pexpect object's before method after issuing the command
         command: the command last issued
+        options: dictionary of Bladerunner options
 
     Returns:
         a (hopefully) nicely formatted string of the command's output
     """
+
+    if options is None:
+        options = {}
 
     def cmd_in_line(command, line):
         """Checks for long commands wrapping into the output."""
@@ -99,14 +103,23 @@ def format_output(output, command):
     # the first line is the command, the last is /probably/ the prompt
     # there can be cases that disobey this though, like exiting without a \n
     for line in output[1:-1]:
-        line = format_line(line)
+        line = format_line(line, options)
         if line and not cmd_in_line(command, line):
             results.append(line)
     return "\n".join(results)
 
 
-def format_line(line):
-    """Removes whitespace, weird tabs, etc..."""
+def format_line(line, options=None):
+    """Removes whitespace, weird tabs, etc...
+
+    Args::
+
+        line: string line to clean
+        options: dictionary of Bladerunner options
+    """
+
+    if options is None:
+        options = {}
 
     for encoding in ["utf-8", "latin-1"]:
         try:
@@ -124,6 +137,24 @@ def format_line(line):
     line = re.sub("\x1b\[[0-9;]+G", "", line)  # no crazy tabs
     line = re.sub("\\x1b\[m\\x0f", "", line)
     line = re.sub("^\s+", "", line)  # no trailing whitespace
+
+    # hide the user's passwords in the output in case the term echo'd them
+    if options.get("password"):
+        line = line.replace(
+            options["password"],
+            "*" * len(options["password"]),
+        )
+    if options.get("second_password"):
+        line = line.replace(
+            options["second_password"],
+            "*" * len(options["second_password"]),
+        )
+    if options.get("jump_password"):
+        line = line.replace(
+            options["jump_password"],
+            "*" * len(options["jump_password"]),
+        )
+
     return line
 
 
