@@ -1,4 +1,4 @@
-bladerunner
+Bladerunner
 ===========
 
 [![Build Status](https://travis-ci.org/a-tal/bladerunner.png?branch=master)](https://travis-ci.org/a-tal/bladerunner)
