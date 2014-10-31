@@ -1,0 +1,28 @@
+language: python
+
+python:
+  - '2.6'
+  - '2.7'
+  - '3.2'
+  - '3.3'
+  - '3.4'
+
+before_install:
+  - pip install --upgrade pexpect
+  - pip install --upgrade coveralls
+  - pip install --upgrade coverage
+  - pip install --upgrade tornado
+  - pip install --upgrade pytest
+  - pip install --upgrade pytest-cov
+  - if [[ $TRAVIS_PYTHON_VERSION =~ "2." ]]; then pip install --upgrade futures; fi
+
+script: "python setup.py test"
+
+after_success:
+  - coveralls
+
+notifications:
+  irc:
+    channels: "irc.freenode.org#atal-dev"
+    on_success: change
+    on_failure: change

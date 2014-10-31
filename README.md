@@ -1,6 +1,13 @@
 bladerunner
 ===========
 
+[![Build Status](https://travis-ci.org/a-tal/bladerunner.png?branch=master)](https://travis-ci.org/a-tal/bladerunner)
+[![Coverage Status](https://coveralls.io/repos/a-tal/bladerunner/badge.png?branch=master)](https://coveralls.io/r/a-tal/bladerunner?branch=master)
+[![Version](https://pypip.in/v/bladerunner/badge.png)](https://pypi.python.org/pypi/bladerunner/)
+[![Downloads this month](https://pypip.in/d/bladerunner/badge.png)](https://pypi.python.org/pypi/bladerunner/)
+
+==========
+
 Bladerunner is a program to send and receive information from any type of ssh enabled text based device.
 It can run through a jumpbox if there are networking restrictions. You can also provide an additional password
 to use for any program after logging in, such as MySQL or sudo. bladerunner will attempt to use the host password
