@@ -503,3 +503,32 @@ def test_stacked_multiline_servers(fake_results, capfd):
     ]
 
     assert stdout == "\n".join(expected)
+
+
+def test_all_passwords_are_hidden():
+    """Passwords from Bladerunner.options should be hidden in the output.
+
+    You could use --debug=<int> from the command line to see the unfiltered
+    output of all commands, but passwords will be hidden in formatted output.
+    """
+
+    options = {
+        "password": "hunter7",
+        "second_password": "something secret",
+        "jump_password": "shared_password",
+    }
+    output = (
+        "shell_prompt> faked\n"
+        "some text which has hunter7 in it, something secret and even a"
+        "shared_password as well, crazy.\n"
+        "shell_prompt>"
+    )
+    expected = (
+        "some text which has ******* in it, **************** and even a"
+        "*************** as well, crazy."
+    )
+
+    if sys.version_info > (3,):
+        output = bytes(output, "utf-8")
+
+    assert formatting.format_output(output, "faked", options) == expected

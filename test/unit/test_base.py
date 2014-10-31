@@ -445,10 +445,10 @@ def test_send_cmd_unix_endings(unicode_chr):
         1
     ))
 
-    with patch.object(base, "format_output") as p_format_output:
+    with patch.object(base, "format_output") as p_format_out:
         runner._send_cmd("fake", server)
 
-    p_format_output.assert_called_once_with(server.before, "fake")
+    p_format_out.assert_called_once_with(server.before, "fake", runner.options)
     server.send.assert_called_once_with("fake{0}".format(unicode_chr(0x000A)))
 
     # the second password should be send with sendline
@@ -467,10 +467,10 @@ def test_send_cmd_winderps_endings(unicode_chr):
     server = Mock()
     server.expect = Mock(return_value=1)
 
-    with patch.object(base, "format_output") as p_format_output:
+    with patch.object(base, "format_output") as p_format_out:
         runner._send_cmd("faked", server)
 
-    p_format_output.assert_called_once_with(server.before, "faked")
+    p_format_out.assert_called_once_with(server.before, "faked", runner.options)
     server.send.assert_called_once_with("faked{0}{1}".format(
         unicode_chr(0x000D),
         unicode_chr(0x000A),
@@ -491,10 +491,14 @@ def test_send_cmd_no_line_endings():
     server = Mock()
     server.expect = Mock(return_value=1)
 
-    with patch.object(base, "format_output") as p_format_output:
+    with patch.object(base, "format_output") as p_format_out:
         runner._send_cmd("fake_cmd", server)
 
-    p_format_output.assert_called_once_with(server.before, "fake_cmd")
+    p_format_out.assert_called_once_with(
+        server.before,
+        "fake_cmd",
+        runner.options,
+    )
     server.sendline.assert_called_once_with("fake_cmd")
 
     assert server.expect.call_count == 1
@@ -511,10 +515,10 @@ def test_send_cmd_no_preference():
     server = Mock()
     server.expect = Mock(return_value=1)
 
-    with patch.object(base, "format_output") as p_format_output:
+    with patch.object(base, "format_output") as p_format_out:
         runner._send_cmd("mock", server)
 
-    p_format_output.assert_called_once_with(server.before, "mock")
+    p_format_out.assert_called_once_with(server.before, "mock", runner.options)
     server.sendline.assert_called_once_with("mock")
 
     assert server.expect.call_count == 1
@@ -563,7 +567,11 @@ def test_try_for_unmatched_works():
             )
 
     assert "fake\\ output" in runner.options["shell_prompts"]
-    p_format.assert_called_once_with(bytes_or_string("fake output"), "fake")
+    p_format.assert_called_once_with(
+        bytes_or_string("fake output"),
+        "fake",
+        runner.options,
+    )
     p_push.assert_called_once_with(server)
 
 

@@ -423,7 +423,7 @@ class Bladerunner(object):
                 command,
             )
 
-        return format_output(server.before, command)
+        return format_output(server.before, command, self.options)
 
     def _try_for_unmatched_prompt(self, server, output, command,
                                   _from_login=False, _attempts_left=3):
@@ -480,7 +480,7 @@ class Bladerunner(object):
             if _from_login:
                 return (server, 1)
             else:
-                return format_output(output, command)
+                return format_output(output, command, self.options)
 
         self.send_interrupt(server)
 
