@@ -30,8 +30,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
-__version__ = "4.1.1"
-__release_date__ = "October 31, 2014"
+__version__ = "4.1.2"
+__release_date__ = "November 10, 2014"
 
 
 from bladerunner.base import Bladerunner
