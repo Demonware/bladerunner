@@ -139,21 +139,14 @@ def format_line(line, options=None):
     line = re.sub("^\s+", "", line)  # no trailing whitespace
 
     # hide the user's passwords in the output in case the term echo'd them
-    if options.get("password"):
-        line = line.replace(
-            options["password"],
-            "*" * len(options["password"]),
-        )
-    if options.get("second_password"):
-        line = line.replace(
-            options["second_password"],
-            "*" * len(options["second_password"]),
-        )
-    if options.get("jump_password"):
-        line = line.replace(
-            options["jump_password"],
-            "*" * len(options["jump_password"]),
-        )
+    for key in ["password", "second_password", "jump_password"]:
+        password = options.get(key)
+        if password:
+            if isinstance(password, (list, tuple)):
+                for passwd in password:
+                    line = line.replace(passwd, "*" * len(passwd))
+            else:
+                line = line.replace(password, "*" * len(password))
 
     return line
 
