@@ -253,3 +253,6 @@ class BladerunnerInteractive(object):
         """Context management cleanup. Ends the session."""
 
         self.end()
+
+    def __repr__(self):
+        return "<BladerunnerInteractive: {:r}>".format(self.server)
