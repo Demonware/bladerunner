@@ -42,7 +42,7 @@ setup(
     author="Adam Talsma",
     author_email="adam@demonware.net",
     packages=["bladerunner"],
-    install_requires=["pexpect >= 3.0", "futures", "argparse"],
+    install_requires=["pexpect >= 3.3", "futures"],
     scripts=["bin/bladerunner"],
     url="https://github.com/Demonware/bladerunner",
     description="Execution of commands on hosts",
