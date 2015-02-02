@@ -17,6 +17,7 @@ def dir_bladerunner():
     "method",
     [
         "Bladerunner",
+        "BladerunnerInteractive",
         "cmdline_entry",
         "cmdline_exit",
         "ProgressBar",

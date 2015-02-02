@@ -501,3 +501,14 @@ def test_log_no_debug(capfd):
     stdout, stderr = capfd.readouterr()
     assert stderr == ""
     assert stdout == ""
+
+
+def test_interactive_repr():
+    """Ensure the contents of a BladerunnerInteractive object's repr."""
+
+    runner = Bladerunner()
+    inter = runner.interactive("some real place")
+    inter_repr = repr(inter)
+
+    assert str(hex(id(inter))) in inter_repr
+    assert "some real place" in inter_repr
