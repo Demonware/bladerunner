@@ -1,11 +1,4 @@
-Bladerunner
-===========
-
-[![Build Status](https://travis-ci.org/a-tal/bladerunner.png?branch=master)](https://travis-ci.org/a-tal/bladerunner)
-[![Coverage Status](https://coveralls.io/repos/a-tal/bladerunner/badge.png?branch=master)](https://coveralls.io/r/a-tal/bladerunner?branch=master)
-[![Version](https://pypip.in/v/bladerunner/badge.png)](https://pypi.python.org/pypi/bladerunner/)
-[![Downloads this month](https://pypip.in/d/bladerunner/badge.png)](https://pypi.python.org/pypi/bladerunner/)
-
+bladerunner
 ===========
 
 Bladerunner is a program to send and receive information from any type of ssh enabled text based device.
