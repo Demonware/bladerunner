@@ -1,5 +1,6 @@
 """Bladerunner's setup.py."""
 
+
 import io
 import re
 
@@ -8,6 +9,8 @@ from setuptools.command.test import test as TestCommand
 
 
 def find_version(filename):
+    """Uses re to pull out the assigned value to __version__ in filename."""
+
     with io.open(filename, encoding="utf-8") as version_file:
         version_match = re.search(r'^__version__ = [\'"]([^\'"]*)[\'"]',
                                   version_file.read(), re.M)
@@ -54,7 +57,7 @@ setup(
         "custom networking and host setups."
     ),
     download_url="https://github.com/Demonware/bladerunner",
-    tests_require=["pytest", "mock", "tornado"],
+    tests_require=["pytest", "pytest-cov", "mock", "tornado"],
     cmdclass={"test": PyTest},
     license="BSD",
     classifiers=[

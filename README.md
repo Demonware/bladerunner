@@ -16,8 +16,10 @@ Install
 
 Installation is done via the usual methods:
 
- `$  python setup.py build`
- `$  sudo python setup.py install`
+```sh
+$ python setup.py build
+$ sudo python setup.py install
+```
 
 Alternatively, you can install via pip:
 
@@ -37,7 +39,9 @@ Options
 
 For a full list of options use:
 
-  `bladerunner --help`
+```sh
+bladerunner --help
+```
 
 Using a file with a list of commands in it is an easy way to execute more complex tasks.
 
@@ -99,4 +103,3 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
 ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
