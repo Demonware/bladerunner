@@ -1,17 +1,19 @@
 """Bladerunner's setup.py."""
 
+import io
+import re
 
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
 
-with open("bladerunner/__init__.py", "r") as openinit:
-    for line in openinit.readlines():
-        if line.startswith("__version__ ="):
-            __version__ = line[14:].replace('"', "").replace('"', "").strip()
-            break
-    else:
-        __version__ = "0.0-version-unknown"
+def find_version(filename):
+    with io.open(filename, encoding="utf-8") as version_file:
+        version_match = re.search(r'^__version__ = [\'"]([^\'"]*)[\'"]',
+                                  version_file.read(), re.M)
+    if version_match:
+        return version_match.group(1)
+    return "0.0-version-unknown"
 
 
 class PyTest(TestCommand):
@@ -36,11 +38,11 @@ class PyTest(TestCommand):
 
 setup(
     name="bladerunner",
-    version=__version__,
+    version=find_version("bladerunner/__init__.py"),
     author="Adam Talsma",
     author_email="adam@demonware.net",
     packages=["bladerunner"],
-    install_requires=["pexpect >= 3.0", "futures", "argparse"],
+    install_requires=["pexpect >= 3.3", "futures"],
     scripts=["bin/bladerunner"],
     url="https://github.com/Demonware/bladerunner",
     description="Execution of commands on hosts",
@@ -64,5 +66,11 @@ setup(
         "Programming Language :: Python",
         "Topic :: System :: Clustering",
         "Topic :: System :: Systems Administration",
+        'Programming Language :: Python',
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
     ],
 )

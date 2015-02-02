@@ -16,16 +16,20 @@ Install
 
 Installation is done via the usual methods:
 
- `$  python setup.py build`  
+ `$  python setup.py build`
  `$  sudo python setup.py install`
 
-Alternatively, you can install via pip or easy_install.
+Alternatively, you can install via pip:
+
+```sh
+$ pip install bladerunner
+```
 
 
 Requires
 --------
 
-Python (v2.7+), pexpect, python-argparse and [futures 2.1.3](https://pypi.python.org/pypi/futures).
+Python (v2.7+), pexpect and [futures 2.1.3](https://pypi.python.org/pypi/futures).
 
 
 Options
@@ -47,7 +51,7 @@ Sphinx autodocs are available [on pythonhosted](http://pythonhosted.org/bladerun
 Python 3
 --------
 
-Bladerunner fully supports Python 3. Please install the latest version of the [pexpect 3.x beta](https://github.com/pexpect/pexpect/releases/) to use Bladerunner with py3.
+Bladerunner fully supports Python 3.
 
 
 Changelog
