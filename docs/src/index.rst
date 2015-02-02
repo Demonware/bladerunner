@@ -143,7 +143,7 @@ As you can see, supplying more hosts (the second argument, can also be a list), 
 
   >>> runner.end_interactive("some_host")
   >>> runner.interactive_hosts
-  {'some_other_host': <BladerunnerInteractive: 'some_host'>}
+  {'some_other_host': <BladerunnerInteractive object connected to 'some_other_host' at 0xb6f1dd8c>}
 
 Interactive Threading
 ---------------------

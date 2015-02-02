@@ -255,4 +255,10 @@ class BladerunnerInteractive(object):
         self.end()
 
     def __repr__(self):
-        return "<BladerunnerInteractive: {:r}>".format(self.server)
+        """String representation of self, includes connected server and ID."""
+
+        return "<{} object connected to {!r} at {}>".format(
+            self.__class__.__name__,
+            self.server,
+            hex(id(self)),
+        )
