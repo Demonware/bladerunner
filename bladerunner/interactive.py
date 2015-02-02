@@ -257,7 +257,7 @@ class BladerunnerInteractive(object):
     def __repr__(self):
         """String representation of self, includes connected server and ID."""
 
-        return "<{} object connected to {!r} at {}>".format(
+        return "<{0} object connected to {1!r} at {2}>".format(
             self.__class__.__name__,
             self.server,
             hex(id(self)),
