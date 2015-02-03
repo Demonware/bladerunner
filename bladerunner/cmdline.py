@@ -640,10 +640,10 @@ def setup_argparse(args):
 
 def main():
     """Main run loop, except KeyboardInterrupts."""
+
     try:
-        COMMANDS, SERVERS, OPTIONS = cmdline_entry()
-        BLADERUNNER = Bladerunner(OPTIONS)
-        RESULTS = BLADERUNNER.run(COMMANDS, SERVERS)
-        cmdline_exit(RESULTS, OPTIONS)
+        commands, servers, options = cmdline_entry()
+        results = Bladerunner(options).run(commands, servers)
+        cmdline_exit(results, options)
     except KeyboardInterrupt:
         raise SystemExit("interrupted")
