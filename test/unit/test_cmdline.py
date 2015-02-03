@@ -441,3 +441,31 @@ def test_stacked_is_called_when_flat():
             cmdline_exit(["fake"], {"stacked": True})
 
     stack_patch.assert_called_once_with(["fake"], {"stacked": True})
+
+
+def test_main_calls():
+    """Verify the console entry point calls with mock."""
+
+    with patch.object(cmdline, "cmdline_entry", return_value=(1, 2, 3)):
+        with patch.object(cmdline, "Bladerunner") as br_patch:
+            with patch.object(cmdline, "cmdline_exit") as exit_patch:
+                cmdline.main()
+
+    # the 3rd return from cmdline_entry is the options dict, used in BR init
+    br_patch.assert_called_once_with(3)
+
+    # run should be called with the 1st and 2nd return as commands and servers
+    br_patch.run.aassert_called_once_with(1, 2)
+
+    # finally, the exit call takes the return from run and the initial options
+    exit_patch.assert_called_once_with(br_patch().run(), 3)
+
+
+def test_main_kb_interrupt():
+    """The main loop catches KeyboardInterrupts and reraises as SystemExit."""
+
+    with patch.object(cmdline, "cmdline_entry", side_effect=KeyboardInterrupt):
+        with pytest.raises(SystemExit) as error:
+            cmdline.main()
+
+    assert "interrupted" in error.exconly()

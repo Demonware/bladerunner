@@ -46,7 +46,11 @@ setup(
     author_email="adam@demonware.net",
     packages=["bladerunner"],
     install_requires=["pexpect >= 3.3", "futures"],
-    scripts=["bin/bladerunner"],
+    entry_points={
+        'console_scripts': [
+            'bladerunner = bladerunner.cmdline:main',
+        ]
+    },
     url="https://github.com/Demonware/bladerunner",
     description="Execution of commands on hosts",
     long_description=(
@@ -71,8 +75,10 @@ setup(
         "Topic :: System :: Systems Administration",
         'Programming Language :: Python',
         "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.2",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
     ],

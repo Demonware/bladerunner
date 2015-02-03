@@ -37,7 +37,7 @@ import sys
 import getpass
 import argparse
 
-from bladerunner import __version__, __release_date__
+from bladerunner import Bladerunner, __version__, __release_date__
 from bladerunner.formatting import csv_results, pretty_results, stacked_results
 
 
@@ -636,3 +636,14 @@ def setup_argparse(args):
 
     settings = parser.parse_args(args)
     return (settings, parser)
+
+
+def main():
+    """Main run loop, except KeyboardInterrupts."""
+
+    try:
+        commands, servers, options = cmdline_entry()
+        results = Bladerunner(options).run(commands, servers)
+        cmdline_exit(results, options)
+    except KeyboardInterrupt:
+        raise SystemExit("interrupted")
