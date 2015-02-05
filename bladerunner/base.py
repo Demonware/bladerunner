@@ -39,6 +39,7 @@ import os
 import sys
 import math
 import time
+import codecs
 import getpass
 import inspect
 import pexpect
@@ -48,7 +49,22 @@ from concurrent.futures import ThreadPoolExecutor
 from bladerunner.progressbar import ProgressBar
 from bladerunner.interactive import BladerunnerInteractive
 from bladerunner.networking import can_resolve, ips_in_subnet
-from bladerunner.formatting import FakeStdOut, format_line, format_output
+from bladerunner.formatting import (
+    FakeStdOut,
+    format_line,
+    format_output,
+    DEFAULT_ENCODING,
+)
+
+
+if sys.version_info > (3,):
+    PY3 = True
+    STRING_TYPE = str
+    UNICODE_CHR = chr
+else:
+    PY3 = False
+    STRING_TYPE = basestring
+    UNICODE_CHR = unichr
 
 
 class Bladerunner(object):
@@ -126,14 +142,8 @@ class Bladerunner(object):
             "Permission denied (err: -4)",
             "Password denied (err: -5)",
             "Shell prompt guessing failure (err: -6)",
+            "Could not connect to remote server (err: -7)",
         ]
-
-        if sys.version_info > (3,):
-            self.string_type = str
-            self.unicode_chr = chr
-        else:
-            self.string_type = basestring
-            self.unicode_chr = unichr
 
         self.progress = None
         self.sshc = None
@@ -388,13 +398,13 @@ class Bladerunner(object):
             if self.options["unix_line_endings"]:
                 server.send("{0}{1}".format(
                     command,
-                    self.unicode_chr(0x000A),
+                    UNICODE_CHR(0x000A),
                 ))
             elif self.options["windows_line_endings"]:
                 server.send("{0}{1}{2}".format(
                     command,
-                    self.unicode_chr(0x000D),
-                    self.unicode_chr(0x000A),
+                    UNICODE_CHR(0x000D),
+                    UNICODE_CHR(0x000A),
                 ))
             else:
                 server.sendline(command)
@@ -443,12 +453,11 @@ class Bladerunner(object):
         """
 
         # prompt is usually in the last 30 chars of the last line of output
-        # need to setup a fallback in case output is empty. py3 is in bytes
-        if sys.version_info > (3,):
-            fback = [bytes("", "latin-1")]
-        else:
-            fback = [""]
-        new_prompt = format_line((output.splitlines() or fback)[-1][-30:])
+        # do /not/ format_line the prompt, it could contain special characters
+        new_prompt = output.splitlines()[-1][-30:] or ""
+
+        if isinstance(new_prompt, bytes):
+            new_prompt = codecs.decode(new_prompt, DEFAULT_ENCODING)
 
         # escape regex characters
         replacements = ["\\", "/", ")", "(", "[", "]", "{", "}", " ", "$",
@@ -583,7 +592,7 @@ class Bladerunner(object):
 
         if not self.sshc:
             try:
-                sshr = pexpect.spawn(ssh_cmd)
+                sshr = pexpect.spawn(ssh_cmd, timeout=self.options["timeout"])
 
                 if self.options["debug"]:
                     sshr.logfile_read = FakeStdOut
@@ -600,7 +609,16 @@ class Bladerunner(object):
 
                 return self._multipass(sshr, password, login_response)
             except (pexpect.TIMEOUT, pexpect.EOF):
-                return (None, -1)
+                if sshr.isalive():
+                    # logged in with no passwd and an unknown prompt
+                    return self._try_for_unmatched_prompt(
+                        sshr,
+                        sshr.before,
+                        ssh_cmd,
+                        _from_login=True,
+                    )
+                else:
+                    return (None, -7)
         else:
             self.sshc.sendline(ssh_cmd)
 
@@ -612,12 +630,29 @@ class Bladerunner(object):
                     self.options["timeout"],
                 )
             except (pexpect.TIMEOUT, pexpect.EOF):
+                # XXX: possible to use a jumpbox and login without a passwd
+                #      and the shell prompt is unknown... can't use isalive tho
+                #      so, this results in an error for now. workaround is to
+                #      provide the expected after-jumpbox expected shell prompt
                 self.send_interrupt(self.sshc)
                 return (None, -1)
 
-            if self.sshc.before.find("Permission denied") != -1:
+            if PY3:
+                look_for = bytes("Permission denied", DEFAULT_ENCODING)
+            else:
+                look_for = "Permission denied"
+
+            if self.sshc.before.find(look_for) != -1:
                 self.send_interrupt(self.sshc)
                 return (None, -4)
+
+            for net_err in ("Network is unreachable", "Connection refused"):
+                if PY3:
+                    net_err = bytes(net_err, DEFAULT_ENCODING)
+
+                if self.sshc.before.find(net_err) != -1:
+                    self.send_interrupt(self.sshc)
+                    return (None, -7)
 
             return self._multipass(self.sshc, password, login_response)
 
@@ -650,7 +685,7 @@ class Bladerunner(object):
             return (None, error_code)
 
     def login(self, sshc, password, login_response):
-        """Internal method for logging in, used by connect.
+        """Internal method for logging in, used by connect/_multipass.
 
         Args::
 
@@ -726,7 +761,7 @@ class Bladerunner(object):
         """
 
         try:
-            sshc.sendline(self.unicode_chr(0x003))
+            sshc.sendline(UNICODE_CHR(0x003))
             sshc.expect(
                 self.options["shell_prompts"] +
                 self.options["extra_prompts"],
@@ -808,7 +843,7 @@ class Bladerunner(object):
             list of string hostnames or IP addresses
         """
 
-        if isinstance(hosts, self.string_type) and os.path.isfile(hosts):
+        if isinstance(hosts, STRING_TYPE) and os.path.isfile(hosts):
             hostfp = hosts
             with open(hostfp, "r") as hostsfile:
                 hosts = hostsfile.read().splitlines()

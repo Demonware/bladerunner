@@ -35,11 +35,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import print_function
 
+import io
 import os
 import re
 import sys
+import codecs
 
 from bladerunner.progressbar import get_term_width
+
+
+DEFAULT_ENCODINGS = ["utf-8", "latin-1", "utf-16"]
+DEFAULT_ENCODING = "utf-8"
+
+if sys.version_info > (3,):
+    UNICODE_TYPE = str
+else:
+    UNICODE_TYPE = unicode
 
 
 class FakeStdOut(object):
@@ -49,7 +60,13 @@ class FakeStdOut(object):
     def write(string):
         """Fake write, use print instead."""
 
-        print(string.decode("latin-1").strip())
+        for encoding in DEFAULT_ENCODINGS:
+            try:
+                print(codecs.decode(string, encoding).strip())
+            except (UnicodeEncodeError, UnicodeDecodeError):
+                pass
+            else:
+                break
 
     @staticmethod
     def flush():
@@ -64,7 +81,16 @@ def no_empties(input_list):
     out_list = []
     for item in input_list:
         if item:
-            out_list.append(item.encode("latin-1").decode("latin-1").strip())
+            for encoding in DEFAULT_ENCODINGS:
+                try:
+                    out_list.append(codecs.decode(
+                        codecs.encode(item, encoding),
+                        encoding,
+                    ).strip())
+                except UnicodeEncodeError:
+                    pass
+                else:
+                    break
     return out_list
 
 
@@ -121,9 +147,9 @@ def format_line(line, options=None):
     if options is None:
         options = {}
 
-    for encoding in ["utf-8", "latin-1"]:
+    for encoding in DEFAULT_ENCODINGS:
         try:
-            line = line.decode(encoding)
+            line = codecs.decode(line, encoding)
         except (UnicodeDecodeError, UnicodeEncodeError):
             pass
         else:
@@ -553,26 +579,53 @@ def write(string, options, end=""):
     """
 
     if options.get("output_file"):
-        with open(options["output_file"], "a") as outputfile:
-            outputfile.write("{0}{1}".format(string, end))
+        for enc in DEFAULT_ENCODINGS:
+            try:
+                with io.open(options["output_file"], "a", encoding=enc) as out:
+                    out.write(UNICODE_TYPE("{0}{1}".format(string, end)))
+            except (UnicodeEncodeError, UnicodeDecodeError):
+                pass
+            else:
+                break
+        else:
+            _retry_write(string, options, end)
+
     else:
         try:
             print(string, end=end)
-        except UnicodeDecodeError as error:
-            double_check = _prompt_for_input_on_error(
-                "Errored printing the results. Would you like to "
-                "write them to a file somewhere instead? ",
-                error,
-            )
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            _retry_write(string, options, end)
 
-            if double_check.lower().startswith("y"):
-                options["output_file"] = _prompt_for_input_on_error(
-                    "File name: ",
-                    error,
-                )
-                return write(string, options, end)
-            else:
-                raise error
+
+def _retry_write(string, options, end):
+    """Retries the write function call if it encounters a UnicodeError.
+
+    Args::
+
+        string: the string desired to have written
+        options: the Bladerunner options dictionary
+        end: character or empty string to end the print statement with
+        error: the Exception class to raise if the user cancels
+    """
+
+    user_cancel = SystemExit(
+        "Could not write results. Cancelled on user request."
+    )
+
+    double_check = _prompt_for_input_on_error(
+        "Errored printing the results. Would you like to "
+        "write them to a file somewhere instead? ",
+        user_cancel,
+    )
+
+    if double_check.lower().startswith("y"):
+        options["output_file"] = _prompt_for_input_on_error(
+            "File name: ",
+            user_cancel,
+        )
+        return write(string, options, end)
+    else:
+        raise user_cancel
 
 
 def _prompt_for_input_on_error(user_msg, error):

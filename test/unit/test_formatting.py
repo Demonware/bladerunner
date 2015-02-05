@@ -9,6 +9,7 @@ import os
 import sys
 import pytest
 import tempfile
+from mock import call
 from mock import Mock
 from mock import patch
 
@@ -48,6 +49,41 @@ def fake_results():
     ]
 
 
+@pytest.fixture
+def fake_unicode_decode_error():
+    """Fixture to provide a fake UnicodeDecodeError Exception class."""
+
+    if sys.version_info > (3,):
+        return UnicodeDecodeError("utf-8", bytes("fake", "utf-8"), 1, 1, "ok")
+    else:
+        return UnicodeDecodeError(str("utf-8"), str("fake"), 1, 1, str("ok"))
+
+
+@pytest.fixture
+def fake_unicode_encode_error():
+    """Fixture to provide a fake UnicodeEncodeError Exception class."""
+
+    if sys.version_info > (3,):
+        return UnicodeEncodeError("utf-8", "ok", 1, 1, "fake")
+    else:
+        return UnicodeEncodeError(str("utf-8"), unicode("fake"), 1, 1,
+                                  str("ok"))
+
+
+def assert_all_encodings(string, patched):
+    """Asserts the string was encoded/decode with all encodings via mock.
+
+    Args::
+
+        string: the string used in the encode/decode
+        patched: the mock.patch.object used in the test
+    """
+
+    mock_calls = patched.call_args_list
+    for this_call, enc in zip(mock_calls, formatting.DEFAULT_ENCODINGS):
+        assert this_call == call(string, enc)
+
+
 def test_no_empties():
     """No empties should return the same list without empty elements."""
 
@@ -55,6 +91,20 @@ def test_no_empties():
     emptyless = formatting.no_empties(starting)
 
     assert emptyless == ["something", "else", "and", "things"]
+
+
+def test_no_empties_encodings(fake_unicode_encode_error):
+    """All of DEFAULT_ENCODINGS should be tried on items in the input list."""
+
+    decode_patch = patch.object(
+        formatting.codecs,
+        "encode",
+        side_effect=fake_unicode_encode_error,
+    )
+    with decode_patch as patched_encode:
+        assert formatting.no_empties(["something"]) == []
+
+    assert_all_encodings("something", patched_encode)
 
 
 def test_format_output():
@@ -109,6 +159,21 @@ def test_unknown_returns_line():
         assert output == starting
 
 
+def test_format_line_decode_errors(fake_unicode_decode_error):
+    """If no suitable codec can be found, it should return the input line."""
+
+    decode_patch = patch.object(
+        formatting.codecs,
+        "decode",
+        side_effect=fake_unicode_decode_error,
+    )
+
+    with decode_patch as patched_decode:
+        assert formatting.format_line("sure thing") == "sure thing"
+
+    assert_all_encodings("sure thing", patched_decode)
+
+
 def test_consolidate_results(fake_results):
     """Consolidate should merge matching server result sets."""
 
@@ -128,7 +193,7 @@ def test_consolidate_results(fake_results):
 def test_csv_results(fake_results, capfd):
     """Ensure CSV results print correctly."""
 
-    formatting.csv_results(fake_results, {})
+    formatting.csv_results(fake_results)
     stdout, _ = capfd.readouterr()
     assert "server,command,result" in stdout
     for server in fake_results:
@@ -316,7 +381,7 @@ def test_writing_to_file():
         assert string in openoutput.read()
 
 
-def test_errors_writing_to_stdout():
+def test_errors_writing_to_stdout(fake_unicode_decode_error):
     """We should prompt the user if there's an error printing."""
 
     fallback_file = tempfile.mktemp()
@@ -330,15 +395,13 @@ def test_errors_writing_to_stdout():
     if sys.version_info > (3,):
         m_print = Mock(
             "builtins.print",
-            side_effect=UnicodeDecodeError(
-                "utf-8", memoryview(bytes("fake", "utf-8")), 1, 1, "mock"),
+            side_effect=fake_unicode_decode_error,
         )
         print_patch = patch.object(builtins, "print", new=m_print)
     else:
         m_print = Mock(
             "__builtin__.print",
-            side_effect=UnicodeDecodeError(
-                str("utf-8"), str("fake"), 1, 1, str("mock")),
+            side_effect=fake_unicode_decode_error,
         )
         print_patch = patch.object(__builtin__, str("print"), new=m_print)
 
@@ -352,7 +415,29 @@ def test_errors_writing_to_stdout():
         assert "super important data" in openfile.read()
 
 
-def test_user_requested_raise():
+def test_write_encoding_errors(fake_unicode_decode_error):
+    """All encodings should be tried, then finally a fallback to prompt."""
+
+    open_patch = patch.object(
+        formatting.io,
+        "open",
+        side_effect=fake_unicode_decode_error,
+    )
+    with open_patch as p_open:
+        with patch.object(formatting, "_retry_write") as patched_retry:
+            formatting.write("some stuff", {"output_file": "yep"}, "\o/")
+
+    patched_retry.assert_called_once_with(
+        "some stuff",
+        {"output_file": "yep"},
+        "\o/",
+    )
+
+    for call_, enc in zip(p_open.call_args_list, formatting.DEFAULT_ENCODINGS):
+        assert call_ == call("yep", "a", encoding=enc)
+
+
+def test_user_requested_raise(fake_unicode_decode_error):
     """If the user doesn't answer "yes", raise the error during write."""
 
     mock_input = patch.object(
@@ -364,22 +449,24 @@ def test_user_requested_raise():
     if sys.version_info > (3,):
         m_print = Mock(
             "builtins.print",
-            side_effect=UnicodeDecodeError(
-                "utf-8", memoryview(bytes("fake", "utf-8")), 1, 1, "mock"),
+            side_effect=fake_unicode_decode_error,
         )
         print_patch = patch.object(builtins, "print", new=m_print)
     else:
         m_print = Mock(
             "__builtin__.print",
-            side_effect=UnicodeDecodeError(
-                str("utf-8"), str("fake"), 1, 1, str("mock")),
+            side_effect=fake_unicode_decode_error,
         )
         print_patch = patch.object(__builtin__, str("print"), new=m_print)
 
-    with pytest.raises(UnicodeDecodeError):
+    with pytest.raises(SystemExit) as err:
         with print_patch:
             with mock_input:
                 formatting.write("super important data", {})
+
+    assert err.exconly() == (
+        "SystemExit: Could not write results. Cancelled on user request."
+    )
 
 
 def test_prompt_for_user_input():
@@ -426,12 +513,23 @@ def test_raise_error_during_prompt():
 def test_fake_stdout_decode():
     """Make sure we are cleaning up the output strings correctly."""
 
-    fakestr = Mock()
-    with patch.object(fakestr, "decode") as decode_patch:
+    with patch.object(formatting.codecs, "decode") as decode_patch:
         fakestdout = formatting.FakeStdOut()
-        fakestdout.write(fakestr)
+        fakestdout.write("words")
 
-    decode_patch.assert_called_once_with("latin-1")
+    decode_patch.assert_called_once_with("words", formatting.DEFAULT_ENCODING)
+
+
+def test_fake_stdout_decode_failures(fake_unicode_decode_error):
+    """All of the DEFAULT_ENCODINGS should be tried when printing."""
+
+    decode_patch = patch.object(formatting.codecs, "decode",
+                                side_effect=fake_unicode_decode_error)
+    fakestdout = formatting.FakeStdOut()
+    with decode_patch as patched_decode:
+        fakestdout.write("things")
+
+    assert_all_encodings("things", patched_decode)
 
 
 def test_fake_stdout_flush():

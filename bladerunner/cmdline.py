@@ -32,13 +32,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
+import io
 import os
 import sys
 import getpass
 import argparse
 
 from bladerunner import Bladerunner, __version__, __release_date__
-from bladerunner.formatting import csv_results, pretty_results, stacked_results
+from bladerunner.formatting import (
+    csv_results,
+    pretty_results,
+    stacked_results,
+    DEFAULT_ENCODINGS,
+)
 
 
 def cmdline_entry():
@@ -76,7 +82,7 @@ def cmdline_entry():
     if settings.settingsDebug:
         raise SystemExit(str(options))
 
-    setup_output_file(settings)
+    setup_output_file(options)
 
     return commands, settings.servers, options
 
@@ -95,10 +101,8 @@ def cmdline_exit(results, options):
     elif options["style"] < 0 or options["style"] > 3:
         csv_results(results, options)
     else:
-        try:
-            pretty_results(results, options)
-        except UnicodeEncodeError:
-            csv_results(results, options)
+        pretty_results(results, options)
+
     raise SystemExit
 
 
@@ -301,16 +305,33 @@ def argparse_unlisted(settings):
     return settings
 
 
-def setup_output_file(settings):
-    """Make sure we can write to the output file if that's being used."""
+def setup_output_file(options):
+    """Make sure we can write to the output file if that's being used.
 
-    if settings.output_file:
+    Args:
+        options: original Bladerunner options dictionary
+
+    Returns:
+        None, raises SystemExit if the output_file cannot be written
+    """
+
+    if options["output_file"]:
         # "touch" the file, ensures we can write the output before execution
         try:
-            with open(settings.output_file, "a"):
-                os.utime(settings.output_file, None)
-        except IOError as error:
-            raise SystemExit("Could not open output file: {0}".format(error))
+            for enc in DEFAULT_ENCODINGS:
+                try:
+                    with io.open(options["output_file"], "a", encoding=enc):
+                        os.utime(options["output_file"], None)
+                except (UnicodeEncodeError, UnicodeDecodeError):
+                    pass
+                else:
+                    break
+            else:
+                raise SystemExit("Could not create output file: {0}".format(
+                    options["output_file"]
+                ))
+        except IOError as err:
+            raise SystemExit("Could not open output file: {0}".format(err))
 
 
 def setup_argparse(args):

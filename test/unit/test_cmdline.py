@@ -6,6 +6,7 @@ import sys
 import pytest
 import getpass
 import tempfile
+from mock import call
 from mock import Mock
 from mock import patch
 
@@ -190,28 +191,6 @@ def test_valid_style_is_pretty():
             cmdline_exit([], {"style": 2})
 
     assert pretty.called
-
-
-def test_unicode_errors_revert_csv():
-    """Fake an output issue to ensure fallback to CSV results."""
-
-    results = [{"name": "fake", "results": [("echo wat", "wat")]}]
-
-    if sys.version_info > (3,):
-        second = "unichr"
-    else:
-        second = unicode("unichr")
-
-    mock_error = Mock(
-        side_effect=UnicodeEncodeError("utf-8", second, 1, 1, "chars")
-    )
-
-    with pytest.raises(SystemExit):
-        with patch.object(cmdline, "csv_results") as csv:
-            with patch.object(cmdline, "pretty_results", new=mock_error):
-                cmdline_exit(results, {"style": 2})
-
-    assert csv.called
 
 
 def test_reading_command_file():
@@ -401,25 +380,42 @@ def test_get_jump_password():
 def test_touching_output_file():
     """Check that the output file is writable before starting."""
 
-    class FakeSettings(object):
-        output_file = tempfile.mktemp()
+    output_file = tempfile.mktemp()
 
-    settings = FakeSettings()
-    assert not os.path.exists(settings.output_file)
-    setup_output_file(settings)
-    assert os.path.exists(settings.output_file)
+    assert not os.path.exists(output_file)
+    setup_output_file({"output_file": output_file})
+    assert os.path.exists(output_file)
 
 
 def test_output_file_failure():
     """If we can't write the output file, it should raise SystemExit."""
 
-    class FakeSettings(object):
-        output_file = "/this/file/path/probably/doesnt/exist/i/hope"
-
     with pytest.raises(SystemExit) as error:
-        setup_output_file(FakeSettings())
+        setup_output_file({
+            "output_file": "/this/file/path/probably/doesnt/exist/i/hope",
+        })
 
     assert "Could not open output file: " in error.exconly()
+
+
+def test_output_file_encoding_failure():
+    """All of the encodings should be tried, then finally raise SystemExit."""
+
+    if sys.version_info > (3,):
+        err = UnicodeEncodeError("utf-8", "yes", 1, 1, "ok")
+    else:
+        err = UnicodeEncodeError(str("utf-8"), unicode("yes"), 1, 1, str("ok"))
+
+    open_patch = patch.object(cmdline.io, "open", side_effect=err)
+
+    with open_patch as p_open:
+        with pytest.raises(SystemExit) as error:
+            cmdline.setup_output_file({"output_file": "is fake"})
+
+    for call_, enc in zip(p_open.call_args_list, cmdline.DEFAULT_ENCODINGS):
+        assert call_ == call("is fake", "a", encoding=enc)
+
+    assert "Could not create output file: is fake" in error.exconly()
 
 
 def test_fixed_takes_priority():

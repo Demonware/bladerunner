@@ -702,7 +702,7 @@ def test_connect_no_resolve():
 def test_connect_new_connection():
     """Ensure Bladerunner creates the initial pexpect object correctly."""
 
-    runner = Bladerunner({"debug": 2, "jump_host": "nowhere"})
+    runner = Bladerunner({"debug": 2, "jump_host": "nowhere", "timeout": 14})
     sshr = Mock()
     sshr.expect = Mock(return_value="faked")
 
@@ -711,7 +711,8 @@ def test_connect_new_connection():
             with patch.object(runner, "_multipass") as p_multipass:
                 runner.connect("nowhere", "bobby", "hunter44", 15)
 
-    p_spawn.assert_called_once_with("ssh -p 15 -t -vv bobby@nowhere")
+    p_spawn.assert_called_once_with("ssh -p 15 -t -vv bobby@nowhere",
+                                    timeout=14)
     p_multipass.assert_called_once_with(sshr, "hunter44", "faked")
     sshr.expect.assert_called_once_with(
         runner.options["passwd_prompts"] +
@@ -724,18 +725,39 @@ def test_connect_new_connection():
 
 
 def test_connect_new_exceptions(pexpect_exceptions):
-    """If TIMEOUT or EOF exceptions are raised, connect returns (None, -1)."""
+    """If TIMEOUT or EOF exceptions are raised, connect returns (None, -7)."""
 
     runner = Bladerunner({"debug": 2, "jump_host": "nowhere"})
     sshr = Mock()
     sshr.expect = Mock(side_effect=pexpect_exceptions("faked"))
+    sshr.isalive = Mock(return_value=False)
 
     with patch.object(base, "can_resolve", return_value=True):
         with patch.object(base.pexpect, "spawn", return_value=sshr) as p_spawn:
             res = runner.connect("nowhere", "noone", "hunter29", 99)
 
-    p_spawn.assert_called_once_with("ssh -p 99 -t -vv noone@nowhere")
-    assert res == (None, -1)
+    p_spawn.assert_called_once_with("ssh -p 99 -t -vv noone@nowhere",
+                                    timeout=20)  # default timeout
+    assert res == (None, -7)
+
+
+def test_connect_exception_guess(pexpect_exceptions):
+    """If the pexpect object is alive on connect timeout, guess the prompt."""
+
+    runner = Bladerunner({"timeout": "fake"})
+    sshr = Mock()
+    sshr.expect = Mock(side_effect=pexpect_exceptions("not real"))
+    sshr.before = Mock(return_value="what")
+    sshr.isalive = Mock(return_value=True)
+
+    with patch.object(base, "can_resolve", return_value=True):
+        with patch.object(base.pexpect, "spawn", return_value=sshr) as p_spawn:
+            with patch.object(runner, "_try_for_unmatched_prompt") as p_guess:
+                res = runner.connect("fence", "tim", "hunter1", 4)
+
+    p_spawn.assert_called_once_with("ssh -p 4 -t tim@fence", timeout="fake")
+    p_guess.assert_called_once_with(sshr, sshr.before, "ssh -p 4 -t tim@fence",
+                                    _from_login=True)
 
 
 def test_connect_from_jumpbox():
@@ -766,6 +788,7 @@ def test_connect_from_jb_failures(pexpect_exceptions):
     runner = Bladerunner({"jump_host": "notreal"})
     runner.sshc = Mock()
     runner.sshc.expect = Mock(side_effect=pexpect_exceptions("fake error"))
+    runner.sshc.before = Mock(return_value="things")
 
     with patch.object(base, "can_resolve", return_value=True):
         with patch.object(runner, "send_interrupt") as p_interrupt:
@@ -787,7 +810,12 @@ def test_connect_from_jb_denied():
         with patch.object(runner, "send_interrupt") as p_interrupt:
             ret = runner.connect("home", "self", "hunter22", 443)
 
-    runner.sshc.before.find.assert_called_once_with("Permission denied")
+    if sys.version_info > (3,):
+        expected_call = bytes("Permission denied", "utf-8")
+    else:
+        expected_call = "Permission denied"
+
+    runner.sshc.before.find.assert_called_once_with(expected_call)
     runner.sshc.sendline.assert_called_once_with("ssh -p 443 -t self@home")
     runner.sshc.expect.assert_called_once_with(
         runner.options["passwd_prompts"] +
