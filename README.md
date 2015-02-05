@@ -73,8 +73,7 @@ The full changelog from version 3.7 onward is available [on the wiki](https://gi
 Bugs & TODO
 -----------
 
-If you come across bugs feel free to report them via email or edit [the wiki bug page](https://github.com/Demonware/bladerunner/wiki/Bugs).
-Also see the wiki for the full list of [things to do](https://github.com/Demonware/bladerunner/wiki/Things-to-do).
+If you come across a bug, please create a new issue in the [issue tracking system](https://github.com/Demonware/bladerunner/issues) with enough relevant details and it will be dealt with promptly.
 
 
 Copyright and License
