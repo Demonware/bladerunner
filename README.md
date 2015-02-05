@@ -1,4 +1,4 @@
-bladerunner
+Bladerunner
 ===========
 
 Bladerunner is a program to send and receive information from any type of ssh enabled text based device.
@@ -56,6 +56,12 @@ Python 3
 --------
 
 Bladerunner fully supports Python 3.
+
+
+PyPy
+----
+
+Bladerunner is also compatable with [PyPy and PyPy3](http://pypy.org/).
 
 
 Changelog
