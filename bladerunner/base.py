@@ -454,7 +454,10 @@ class Bladerunner(object):
 
         # prompt is usually in the last 30 chars of the last line of output
         # do /not/ format_line the prompt, it could contain special characters
-        new_prompt = output.splitlines()[-1][-30:] or ""
+        try:
+            new_prompt = output.splitlines()[-1][-30:]
+        except IndexError:
+            new_prompt = ""
 
         if isinstance(new_prompt, bytes):
             new_prompt = codecs.decode(new_prompt, DEFAULT_ENCODING)
