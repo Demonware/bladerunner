@@ -132,6 +132,8 @@ def convert_to_options(settings):
         "port": settings.port,
         "unix_line_endings": settings.unix_line_endings,
         "windows_line_endings": settings.windows_line_endings,
+        "timeout": settings.timeout,
+        "cmd_timeout": settings.cmd_timeout,
     }
 
 
