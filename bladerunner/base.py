@@ -258,17 +258,19 @@ class Bladerunner(object):
 
         if commands_on_servers is not None:
             actual_commands_on_servers = {}
-            for server, command_list in commands_on_servers.items():
+            for servers, command_list in commands_on_servers.items():
+                if not isinstance(servers, tuple):
+                    servers = [servers]
+                for server in servers:
+                    if not isinstance(command_list, (list, tuple)):
+                        command_list = [command_list]
 
-                if not isinstance(command_list, (list, tuple)):
-                    command_list = [command_list]
-
-                network_members = ips_in_subnet(server)
-                if network_members:
-                    for member in network_members:
-                        actual_commands_on_servers[member] = command_list
-                else:
-                    actual_commands_on_servers[server] = command_list
+                    network_members = ips_in_subnet(server)
+                    if network_members:
+                        for member in network_members:
+                            actual_commands_on_servers[member] = command_list
+                    else:
+                        actual_commands_on_servers[server] = command_list
 
             self.commands = None
             self.commands_on_servers = actual_commands_on_servers
