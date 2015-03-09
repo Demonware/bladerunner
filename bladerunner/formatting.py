@@ -3,7 +3,7 @@
 
 This file is part of Bladerunner.
 
-Copyright (c) 2014, Activision Publishing, Inc.
+Copyright (c) 2015, Activision Publishing, Inc.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
