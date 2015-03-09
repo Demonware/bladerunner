@@ -3,6 +3,7 @@
 
 import os
 import sys
+import random
 import pytest
 import pexpect
 import tempfile
@@ -59,6 +60,24 @@ def fake_key(request):
         key_file.write("ssh-rsa abcdefghijklmnopqrstuvwxyz1234567890 bob@fake")
     request.addfinalizer(key_cleanup)
     return fakekey
+
+
+@pytest.fixture
+def fake_inter():
+    """Builds a fake interactive connection object with random server name.
+
+    Returns:
+        FakeConnection object suitable for use as a return in patch
+    """
+
+    all_ascii = list(range(65, 91)) + list(range(97, 123))
+    random_chr = lambda: chr(random.sample(all_ascii, 1)[0])
+    random_str = lambda x: "".join(random_chr() for _ in range(x))
+
+    class FakeConnection(object):
+        server = random_str(12)   # random server name, prevents copy/paste'ing
+
+    return FakeConnection()
 
 
 # test functions to use with testing run_interactive_function
@@ -1007,34 +1026,31 @@ def test_one_extra_prompt():
     assert "single_element" in runner.options["extra_prompts"]
 
 
-def test_setup_interactive():
+def test_setup_interactive(fake_inter):
     """Ensure we can build the connection pool of interactive hosts."""
 
     runner = Bladerunner()
     assert runner.interactive_hosts == {}
 
-    with patch.object(runner, "interactive") as mock_interactive:
-        runner.setup_interactive("fake_place")
+    with patch.object(runner, "interactive", return_value=fake_inter) as inter:
+        runner.setup_interactive("fake_place", connect=False)
 
-    assert "fake_place" in runner.interactive_hosts
-    mock_interactive.assert_called_once_with("fake_place")
+    assert fake_inter.server in runner.interactive_hosts
+    inter.assert_called_once_with("fake_place", False)
 
 
-def test_setup_interactive_many():
+def test_setup_interactive_many(fake_inter):
     """We can initialize many hosts interactively at once."""
 
     runner = Bladerunner()
     assert runner.interactive_hosts == {}
 
-    with patch.object(runner, "interactive") as mock_interactive:
-        runner.setup_interactive(["fake", "place", "fake"])
+    with patch.object(runner, "interactive", return_value=fake_inter) as inter:
+        runner.setup_interactive(["fake", "place", "fake"], connect=False)
 
-    assert "fake" in runner.interactive_hosts
-    assert "place" in runner.interactive_hosts
-
-    assert mock_interactive.call_count == 2
-    mock_interactive.assert_any_call("fake")
-    mock_interactive.assert_any_call("place")
+    assert inter.call_count == 2
+    inter.assert_any_call("fake", False)
+    inter.assert_any_call("place", False)
 
 
 def test_end_interactive():
@@ -1167,7 +1183,7 @@ def test_interactive_hostsfile():
             hostsfile.write("{0}\n".format(test_host))
 
     runner = Bladerunner()
-    runner.setup_interactive(hostsfp)
+    runner.setup_interactive(hostsfp, connect=False)
     setup_hosts = runner.interactive_hosts.keys()
 
     for test_host in test_hosts:
@@ -1183,7 +1199,10 @@ def test_end_interactive_file():
     """The end_interactive method can also be passed a file of hostnames."""
 
     runner = Bladerunner()
-    runner.setup_interactive(["one", "two", "three", "four", "five", "six"])
+    runner.setup_interactive(
+        ["one", "two", "three", "four", "five", "six"],
+        connect=False,
+    )
 
     hostfp = tempfile.mktemp()
     with open(hostfp, "w") as hostsfile:
@@ -1197,3 +1216,31 @@ def test_end_interactive_file():
     assert len(runner.interactive_hosts) == 3
 
     os.remove(hostfp)
+
+
+def test_interactive_connect():
+    """Ensure child objects are stored on successful initial connection."""
+
+    runner = Bladerunner()
+    with patch.object(
+        base.BladerunnerInteractive,
+        "connect",
+        return_value=True) as patched_connect:
+         res = runner.interactive("somewhere neat")
+
+    assert isinstance(res, base.BladerunnerInteractive)
+    patched_connect.assert_called_once_with(status_return=True)
+
+
+def test_interactive_connect_failure():
+    """Ensure child objects are not stored on failed initial connection."""
+
+    runner = Bladerunner()
+    with patch.object(
+        base.BladerunnerInteractive,
+        "connect",
+        return_value=False) as patched_connect:
+         res = runner.interactive("happy town")
+
+    assert res is None
+    patched_connect.assert_called_once_with(status_return=True)

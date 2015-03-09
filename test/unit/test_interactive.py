@@ -13,7 +13,7 @@ def test_object_return():
     """Ensure the object returned from Bladerunner.interactive is correct."""
 
     runner = Bladerunner()
-    inter = runner.interactive("somewhere_fake")
+    inter = runner.interactive("somewhere_fake", connect=False)
     assert isinstance(inter, BladerunnerInteractive)
 
 
@@ -21,7 +21,7 @@ def test_connect():
     """Ensure the correct calls are made to the base object to connect."""
 
     runner = Bladerunner()
-    inter = runner.interactive("somewhere_not_real")
+    inter = runner.interactive("somewhere_not_real", connect=False)
 
     con_mock = mock.patch.object(
         inter.bladerunner,
@@ -45,7 +45,7 @@ def test_connect_error():
     """If the connect fails, it should be logged and sshr should stay None."""
 
     runner = Bladerunner()
-    inter = runner.interactive("the_fake_spot")
+    inter = runner.interactive("the_fake_spot", connect=False)
 
     con_mock = mock.patch.object(
         inter.bladerunner,
@@ -73,7 +73,7 @@ def test_connect_jumpbox():
     """Ensure the calls to connect while using a jumpbox."""
 
     runner = Bladerunner({"jump_host": "not_a_real_thing"})
-    inter = runner.interactive("also_not_real")
+    inter = runner.interactive("also_not_real", connect=False)
 
     con_mock = mock.patch.object(
         inter.bladerunner,
@@ -107,7 +107,7 @@ def test_connect_jumpbox_error():
     """If the connect to the jumpbox fails, connect should short-circuit."""
 
     runner = Bladerunner({"jump_host": "nowhere_real"})
-    inter = runner.interactive("some_fake_place")
+    inter = runner.interactive("some_fake_place", connect=False)
 
     con_mock = mock.patch.object(
         inter.bladerunner,
@@ -135,7 +135,7 @@ def test_reconnect():
     """Ensure the interactive object logs and reconnects correctly."""
 
     runner = Bladerunner()
-    inter = runner.interactive("some_place_which_isnt_real")
+    inter = runner.interactive("some_place_which_isnt_real", connect=False)
 
     with mock.patch.object(inter, "log") as mock_log:
         with mock.patch.object(inter, "end") as mock_end:
@@ -154,7 +154,7 @@ def test_reconnect_interrupt():
     """Ensure the user can cleanly interrupt the interactive reconnect."""
 
     runner = Bladerunner()
-    inter = runner.interactive("nowhere_in_particular")
+    inter = runner.interactive("nowhere_in_particular", connect=False)
 
     # simulate a user pressing ctrl+c by having the connect method raise
     connect_mock = mock.patch.object(
@@ -184,7 +184,7 @@ def test_end():
     """Ensure the interactive session properly cleans up sessions."""
 
     runner = Bladerunner()
-    inter = runner.interactive("no_place")
+    inter = runner.interactive("no_place", connect=False)
     sshr = mock.Mock()
     inter.sshr = sshr
 
@@ -200,7 +200,7 @@ def test_end_shortcut():
     """If end is called before connect it should short-circuit."""
 
     runner = Bladerunner()
-    inter = runner.interactive("seriously_no_where")
+    inter = runner.interactive("seriously_no_where", connect=False)
 
     assert inter.end() is None
     assert inter.sshr is None
@@ -210,7 +210,7 @@ def test_end_jumpbox():
     """Ensure the calls made to close the interactive session with jumpbox."""
 
     runner = Bladerunner({"jump_host": "some_jumper"})
-    inter = runner.interactive("somewhere_beyond_a_wall")
+    inter = runner.interactive("somewhere_beyond_a_wall", connect=False)
     sshr = mock.Mock()
     sshc = mock.Mock()
     inter.sshr = sshr
@@ -230,7 +230,7 @@ def test_end_raises():
     """If end encounters an OSError other than errcode 5, it should raise."""
 
     runner = Bladerunner()
-    inter = runner.interactive("some_unreal_location")
+    inter = runner.interactive("some_unreal_location", connect=False)
     sshr = mock.Mock()
     inter.sshr = sshr
 
@@ -266,7 +266,7 @@ def test_run():
     """Basic case to ensure the proper calls are made to the base object."""
 
     runner = Bladerunner()
-    inter = runner.interactive("no_real_location")
+    inter = runner.interactive("no_real_location", connect=False)
     sshr = mock.Mock()
     inter.sshr = sshr
 
@@ -286,7 +286,7 @@ def test_run_init_connect():
     """If run is ran before connect, connect should be called."""
 
     runner = Bladerunner()
-    inter = runner.interactive("unknown_location")
+    inter = runner.interactive("unknown_location", connect=False)
     sshr_mock = mock.Mock()
 
     def con_se():
@@ -317,7 +317,7 @@ def test_run_connect_canceled():
     """Ensure the user can cleanly break out of an auto-connect from run."""
 
     runner = Bladerunner()
-    inter = runner.interactive("the_place_which_is_not_real")
+    inter = runner.interactive("the_place_which_is_not_real", connect=False)
 
     connect_mock = mock.patch.object(
         inter,
@@ -343,7 +343,7 @@ def test_run_on_closed():
     """If the session is closed it will be None. .run() should shortcut."""
 
     runner = Bladerunner()
-    inter = runner.interactive("no_matter")
+    inter = runner.interactive("no_matter", connect=False)
     inter.sshr = None
 
     assert inter.run("anything") == "connection to no_matter is closed"
@@ -357,7 +357,7 @@ def test_run_raises():
     """
 
     runner = Bladerunner()
-    inter = runner.interactive("some_interactive_place")
+    inter = runner.interactive("some_interactive_place", connect=False)
     # we need to move the run method to a different name so we can test
     # it calling itself recursively with mock
     inter.moved_run = inter.run
@@ -411,7 +411,7 @@ def test_run_thread():
     """If run thread is used the callback should be called with results."""
 
     runner = Bladerunner()
-    inter = runner.interactive("nowhere_really")
+    inter = runner.interactive("nowhere_really", connect=False)
     callback = mock.Mock()
 
     with mock.patch.object(inter, "run", return_value="fake") as mock_run:
@@ -425,7 +425,7 @@ def test_run_threaded():
     """Ensure run threaded returns a started threading.Thread."""
 
     runner = Bladerunner()
-    inter = runner.interactive("somewhere_safe")
+    inter = runner.interactive("somewhere_safe", connect=False)
     fake_mock = mock.Mock()
     thread_mock = mock.patch.object(
         interactive.threading,
@@ -447,7 +447,7 @@ def test_connect_thread():
     """If connect thread is used the callback should be called with results."""
 
     runner = Bladerunner()
-    inter = runner.interactive("nowhere_out_there")
+    inter = runner.interactive("nowhere_out_there", connect=False)
     callback = mock.Mock()
 
     with mock.patch.object(inter, "connect", return_value="ok") as mock_con:
@@ -461,7 +461,7 @@ def test_connect_threaded():
     """Ensure connect threaded returns a started threading.Thread."""
 
     runner = Bladerunner()
-    inter = runner.interactive("some_safe_place")
+    inter = runner.interactive("some_safe_place", connect=False)
     fake_mock = mock.Mock()
     thread_mock = mock.patch.object(
         interactive.threading,
@@ -483,7 +483,7 @@ def test_log(capfd):
     """Ensure the interactive object is logging to stdout correctly."""
 
     runner = Bladerunner({"debug": True})
-    inter = runner.interactive("makes_no_difference")
+    inter = runner.interactive("makes_no_difference", connect=False)
 
     inter.log("some message")
     stdout, stderr = capfd.readouterr()
@@ -496,7 +496,7 @@ def test_log_no_debug(capfd):
     """If the debug option is not set, nothing should be printed to stdout."""
 
     runner = Bladerunner()
-    inter = runner.interactive("anywhere_at_all")
+    inter = runner.interactive("anywhere_at_all", connect=False)
     inter.log("some words")
     stdout, stderr = capfd.readouterr()
     assert stderr == ""
@@ -507,8 +507,48 @@ def test_interactive_repr():
     """Ensure the contents of a BladerunnerInteractive object's repr."""
 
     runner = Bladerunner()
-    inter = runner.interactive("some real place")
+    inter = runner.interactive("some real place", connect=False)
     inter_repr = repr(inter)
 
     assert str(hex(id(inter))) in inter_repr
     assert "some real place" in inter_repr
+
+
+def test_interactive_context():
+    """Ensure we can use BladerunnerInteractive object with context."""
+
+    runner = Bladerunner()
+    inter = runner.interactive("someplace", connect=False)
+
+    login_patch = mock.patch.object(
+        inter,
+        "_login_if_not_already",
+        return_value=True,
+    )
+    with login_patch as patched_login:
+        with mock.patch.object(inter, "end") as patched_end:
+            with inter as inter_context:
+                assert isinstance(inter_context, BladerunnerInteractive)
+
+    patched_login.assert_called_once_with()
+    patched_end.assert_called_once_with()
+
+
+def test_interactive_context_error():
+    """Ensure IOError is raised when using context and the connection fails."""
+
+    runner = Bladerunner()
+    inter = runner.interactive("someplace", connect=False)
+
+    login_patch = mock.patch.object(
+        inter,
+        "_login_if_not_already",
+        return_value="connection failure str...",
+    )
+    with login_patch as patched_login:
+        with pytest.raises(IOError) as raised_error:
+            with inter as inter_context:
+                assert isinstance(inter_context, BladerunnerInteractive)
+
+    patched_login.assert_called_once_with()
+    assert "connection failure str..." in raised_error.exconly()

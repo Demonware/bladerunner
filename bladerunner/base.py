@@ -826,17 +826,23 @@ class Bladerunner(object):
             except (pexpect.TIMEOUT, pexpect.EOF):
                 pass
 
-    def interactive(self, server):
+    def interactive(self, server, connect=True):
         """Builds a BladerunnerInteractive version of this instance for a host.
 
         Args:
             server: string name or IP to connect interactively to
+            connect: boolean, used to intially connect at this time or later
 
         Returns:
-            BladerunnerInteractive object initialized for the server
+            BladerunnerInteractive object, connected if connect is True
         """
 
-        return BladerunnerInteractive(self, server)
+        session = BladerunnerInteractive(self, server)
+        if connect:
+            connected = session.connect(status_return=True)
+            return session if connected else None
+        else:
+            return session
 
     def _prep_interactive_hosts(self, hosts):
         """Checks if hosts is a filepath, reads hosts from there if so.
@@ -856,20 +862,35 @@ class Bladerunner(object):
         if not isinstance(hosts, (list, tuple)):
             hosts = [hosts]
 
-        return hosts
+        return list(set(hosts))  # lazy remove duplicates
 
-    def setup_interactive(self, hosts):
+    def setup_interactive(self, hosts, connect=True):
         """Initializes a list of hosts to be used interactively.
 
         Args:
             hosts: list of hostnames to connect to for interative use later
+            connect: boolean used to make the initial connection now or later
         """
 
         hosts = self._prep_interactive_hosts(hosts)
 
+        prepare_hosts = []
         for host in hosts:
             if host not in self.interactive_hosts:
-                self.interactive_hosts[host] = self.interactive(host)
+                prepare_hosts.append(host)
+
+        with ThreadPoolExecutor(max_workers=self.options["threads"]) as execor:
+            for host in prepare_hosts:
+                con = execor.submit(self.interactive, host, connect).result()
+                if con:
+                    self.interactive_hosts[con.server] = con
+
+    def _end_interactive_session(self, host):
+        """Ends the interactive session on a single host."""
+
+        session = self.interactive_hosts.pop(host, None)
+        if session is not None:
+            session.end()
 
     def end_interactive(self, hosts=None):
         """Ends an interactive stored session.
@@ -881,10 +902,9 @@ class Bladerunner(object):
         hosts = list(self.interactive_hosts.keys()) if hosts is None else hosts
         hosts = self._prep_interactive_hosts(hosts)
 
-        for host in hosts:
-            session = self.interactive_hosts.pop(host, None)
-            if session is not None:
-                session.end()
+        with ThreadPoolExecutor(max_workers=self.options["threads"]) as execor:
+            for host in hosts:
+                execor.submit(self._end_interactive_session, host)
 
     def run_interactive(self, command, hosts=None, print_results=True):
         """Runs a single command interactively on a list of hostnames.

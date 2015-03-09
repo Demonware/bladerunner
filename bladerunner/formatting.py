@@ -582,7 +582,7 @@ def write(string, options, end=""):
         for enc in DEFAULT_ENCODINGS:
             try:
                 with io.open(options["output_file"], "a", encoding=enc) as out:
-                    out.write(codecs.decode("{0}{1}".format(string, end), enc))
+                    out.write(UNICODE_TYPE("{0}{1}".format(string, end)))
             except (UnicodeEncodeError, UnicodeDecodeError):
                 pass
             else:
